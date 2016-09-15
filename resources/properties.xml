@@ -4,6 +4,9 @@
     	<property id="HrConfig" type="number">0</property>
     	<property id="TopRowConfig" type="number">0</property>
     	<property id="TargetPace" type="number">0</property>
+      <property id="BottomLeftConfig" type="number">1</property>
+      <property id="BottomRightConfig" type="number">0</property>
+      <property id="ShowColourIndicators" type="boolean">true</property>
 	</properties>
 
     <strings>
@@ -11,18 +14,21 @@
        <string id="AppVersion">1.0.0</string>
        <string id="HrConfigTitle">Heart rate display</string>
        <string id="HrConfigBpm">Show heart rate in BPM</string>
-       <string id="HrConfigZone">Show as decimal heart rate zone (e.g. 4.3)</string>
+       <string id="HrConfigZone">Show as decimal zone (e.g. 4.3)</string>
        <string id="HrConfigBoth">Show heart rate (BPM) and zone together</string>
-       <string id="TopRowConfigTitle">Timer and Distance display</string>
-       <string id="TopRowTimerLeft">Show Timer on the left, Distance on the right</string>
-       <string id="TopRowTimerRight">Show Distance on the left, Timer on the right</string>
+       <string id="TopRowConfigTitle">Top row display (L-R)</string>
+       <string id="TopRowTimerLeft">Timer, Distance</string>
+       <string id="TopRowTimerRight">Distance, Timer</string>
        <string id="TargetPaceTitle">Target pace metric</string>
+       <string id="BottomLeftConfigTitle">Bottom left field</string>
+       <string id="BottomRightConfigTitle">Bottom right field</string>
+       <string id="ShowColourIndicatorsTitle">Show colour indicators</string>
        <string id="PaceAverage">Overall average pace</string>
-       <string id="PaceMoving">Moving pace</string>
+       <string id="PaceMoving">Moving (running) pace</string>
        <string id="PaceLap">Current lap pace</string>
-       <string id="PaceLapMoving">Current lap moving pace</string>
+       <string id="PaceLapMoving">Current lap moving (running) pace</string>
        <string id="PaceLastLap">Last lap pace</string>
-       <string id="PaceLastLapMoving">Last lap moving pace</string>
+       <string id="PaceLastLapMoving">Last lap moving (running) pace</string>
     </strings>
 
     <settings>
@@ -33,12 +39,14 @@
     			<listEntry value="2">@Strings.HrConfigBoth</listEntry>
     		</settingConfig>
     	</setting>
+
     	<setting propertyKey="@Properties.TopRowConfig" title="@Strings.TopRowConfigTitle">
     		<settingConfig type="list" required="true">
     			<listEntry value="0">@Strings.TopRowTimerLeft</listEntry>
     			<listEntry value="1">@Strings.TopRowTimerRight</listEntry>
     		</settingConfig>
     	</setting>
+
     	<setting propertyKey="@Properties.TargetPace" title="@Strings.TargetPaceTitle">
     		<settingConfig type="list" required="true">
     			<listEntry value="0">@Strings.PaceAverage</listEntry>
@@ -50,5 +58,31 @@
     		</settingConfig>
     	</setting>
 
+      <setting propertyKey="@Properties.BottomLeftConfig" title="@Strings.BottomLeftConfigTitle">
+        <settingConfig type="list" required="true">
+          <listEntry value="0">@Strings.PaceAverage</listEntry>
+          <listEntry value="1">@Strings.PaceMoving</listEntry>
+          <listEntry value="2">@Strings.PaceLap</listEntry>
+          <listEntry value="3">@Strings.PaceLapMoving</listEntry>
+          <listEntry value="4">@Strings.PaceLastLap</listEntry>
+          <listEntry value="5">@Strings.PaceLastLapMoving</listEntry>
+        </settingConfig>
+      </setting>
+
+      <setting propertyKey="@Properties.BottomRightConfig" title="@Strings.BottomRightConfigTitle">
+        <settingConfig type="list" required="true">
+          <listEntry value="0">@Strings.PaceAverage</listEntry>
+          <listEntry value="1">@Strings.PaceMoving</listEntry>
+          <listEntry value="2">@Strings.PaceLap</listEntry>
+          <listEntry value="3">@Strings.PaceLapMoving</listEntry>
+          <listEntry value="4">@Strings.PaceLastLap</listEntry>
+          <listEntry value="5">@Strings.PaceLastLapMoving</listEntry>
+        </settingConfig>
+      </setting>
+
+      <setting propertyKey="@Properties.ShowColourIndicators" title="@Strings.ShowColourIndicatorsTitle">
+        <settingConfig type="boolean" required="true" />
+      </setting>
     </settings>
+
     <bitmap id="LauncherIcon" filename="launcher_icon.png"></bitmap></resources>

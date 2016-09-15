@@ -42,6 +42,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	}
 	hidden var bottomLeftData = PACE_MOVING;	//! Data to show in bottom left field
 	hidden var bottomRightData = PACE_AVERAGE;	//! Data to show in bottom right field
+
+	hidden var showColourIndicators = true;
 	
 	hidden var mActivityInfo;
 	var mTimerRunning = false;
@@ -76,11 +78,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         DataField.initialize();  
         
  		hrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
- 		topRowDisplay		= Application.getApp().getProperty("TopRowConfig");
- 		hrDisplay 			= Application.getApp().getProperty("HrConfig");	 
- 		targetPaceMetric	= Application.getApp().getProperty("TargetPace");
+ 		var mApp = Application.getApp();
+ 		topRowDisplay			= mApp.getProperty("TopRowConfig");
+ 		hrDisplay 				= mApp.getProperty("HrConfig");	 
+ 		targetPaceMetric		= mApp.getProperty("TargetPace");
+ 		bottomLeftData			= 1;//mApp.getProperty("BottomLeftConfig");
+ 		bottomRightData			= 0;//mApp.getProperty("BottomRightConfig");
+ 		showColourIndicators	= mApp.getProperty("ShowColourIndicators");
  
- 		
         if (System.getDeviceSettings().paceUnits == System.UNIT_METRIC) {
         	unitP = 1000.0;
         } else { //if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
@@ -122,7 +127,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     		mActivityInfo.currentSpeed = 0.0;
     	}
 
-    	if (mTimerRunning && mActivityInfo.currentSpeed < 1.75) { //! Speed below which the moving time timer is paused (1.75 m/s = 9:30 min/km)
+    	if (mTimerRunning && mActivityInfo.currentSpeed < 1.8) { //! Speed below which the moving time timer is paused (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			//! Simple non-moving time calculation - relies on compute() being called every second
 			stoppedSeconds++;
 			lapStoppedSeconds++;
@@ -206,7 +211,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			targetSpeed = lastLapMovingSpeed;
 		}
 					
-		if (targetSpeed > 0.0 && mActivityInfo.currentSpeed > 0.0) {
+		if (targetSpeed > 0.0 && mActivityInfo.currentSpeed > 1.8) {	//! Only use the pace colour indicator when running (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			paceDeviation = (mActivityInfo.currentSpeed / targetSpeed);
 		} else {
 			paceDeviation = null;
@@ -245,6 +250,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		System.println("Last lap moving speed: " + lastLapMovingSpeed);
 		System.println("==================================================");
 /**/
+mActivityInfo.currentSpeed = 3.0;
+mActivityInfo.currentHeartRate = 180;
+mActivityInfo.currentCadence = 180;
     }
 
     //! Store last lap quantities and set lap markers
@@ -287,6 +295,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     //! Display the value you computed here. This will be called
     //! once a second when the data field is visible.
     function onUpdate(dc) {
+    	var nudge = 0;
     	dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.clear();    	
 
@@ -294,61 +303,68 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	if (hrDisplay == HR_DISPLAY_BOTH) {
     		dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_WHITE);
         	dc.setPenWidth(2);
-        	dc.drawLine(0, 90, 54, 90);
+        	if ( (mActivityInfo.currentSpeed < 2.687 && unitP == 1609.344) || (mActivityInfo.currentSpeed < 1.669 && unitP == 1000.0) ) {
+				dc.drawLine(12, 90, 55, 90);
+			} else {
+        		dc.drawLine(12, 90, 60, 90);
+        	}
     	}
 
     	//!
     	//! Draw colour indicators first	
     	//!	
-		dc.setPenWidth(16);
+    	if (showColourIndicators) {
+			dc.setPenWidth(16);
 
-		//! Set HR zone indicator colour
-		if (hrZone < 1.0) {
-    		dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);	//! No zone
-		} else if (hrZone < 2.0) {
-			dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);	//! Warm-up
-		} else if (hrZone < 3.0) {
-			dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);		//! Easy
-		} else if (hrZone < 4.0) {
-			dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);		//! Aerobic
-		} else if (hrZone < 5.0) {
-			dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);		//! Threshold
-		} else {
-			dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);		//! Maximum
-		}
-		dc.drawArc(111, 89, 106, dc.ARC_CLOCKWISE, 200, 158);	
+			//! Set HR zone indicator colour
+			if (hrZone < 1.0) {
+	    		dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);	//! No zone
+			} else if (hrZone < 2.0) {
+				dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);	//! Warm-up
+			} else if (hrZone < 3.0) {
+				dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);		//! Easy
+			} else if (hrZone < 4.0) {
+				dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);		//! Aerobic
+			} else if (hrZone < 5.0) {
+				dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);		//! Threshold
+			} else {
+				dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);		//! Maximum
+			}
+			dc.drawArc(111, 89, 106, dc.ARC_CLOCKWISE, 200, 158);	
 
-		//! Set cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
-		if (mActivityInfo.currentCadence > 183) {
-			dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
-		} else if (mActivityInfo.currentCadence >= 174) {
-			dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
-		} else if (mActivityInfo.currentCadence >= 164) {
-			dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-		} else if (mActivityInfo.currentCadence >= 153) {
-			dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-		} else if (mActivityInfo.currentCadence >= 130) {
-			dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-		}  else {
-			dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-		}
-		dc.drawArc(103, 89, 106, dc.ARC_CLOCKWISE, 20, 340);
+			//! Set cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
+			if (mActivityInfo.currentCadence > 183) {
+				dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
+			} else if (mActivityInfo.currentCadence >= 174) {
+				dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
+			} else if (mActivityInfo.currentCadence >= 164) {
+				dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+			} else if (mActivityInfo.currentCadence >= 153) {
+				dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+			} else if (mActivityInfo.currentCadence >= 120) {
+				dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+			}  else {
+				dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+			}
+			dc.drawArc(103, 89, 106, dc.ARC_CLOCKWISE, 20, 340);
 
-		//! Current pace vs (moving) average pace colour indicator
-		if (paceDeviation == null) {
-			dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-		} else if (paceDeviation < 0.95) {	//! Maximum % slower deviation of current pace from target considered good
-			dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-		} else if (paceDeviation <= 1.05) {	//! Maximum % faster deviation of current pace from target considered good
-			dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-		} else {
-			dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
+			//! Current pace vs (moving) average pace colour indicator
+			if (paceDeviation == null) {
+				dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+			} else if (paceDeviation < 0.95) {	//! Maximum % slower deviation of current pace from target considered good
+				dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+			} else if (paceDeviation <= 1.05) {	//! Maximum % faster deviation of current pace from target considered good
+				dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+			} else {
+				dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
+			}
+			dc.fillRectangle(55, 56, 105, 18);
+
+			//! Chop tops and bottoms off arcs
+			dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+			dc.fillRectangle(0, 48, 215, 8);
+			dc.fillRectangle(0, 121, 215, 8);
 		}
-		dc.fillRectangle(54, 56, 107, 18);			
-		//! Chop tops and bottoms off arcs
-		dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-		dc.fillRectangle(0, 48, 215, 8);
-		dc.fillRectangle(0, 121, 215, 8);
 
     	//! Draw separator lines
         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_WHITE);
@@ -364,8 +380,20 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			dc.drawLine(107, 0, 107, 56);
 		}
 		//! Centre vertical dividers
-		dc.drawLine(54, 56, 54, 121);
-		dc.drawLine(161, 56, 161, 121);
+		if (showColourIndicators) {
+			dc.drawLine(55, 56, 55, 121);
+			dc.drawLine(160, 56, 160, 121);
+		} else {
+			if ( (mActivityInfo.currentSpeed < 2.687 && unitP == 1609.344) || (mActivityInfo.currentSpeed < 1.669 && unitP == 1000.0) ) {
+				dc.drawLine(56, 56, 56, 121);
+				dc.drawLine(159, 56, 159, 121);
+			} else {
+				dc.drawLine(60, 56, 60, 121);
+				dc.drawLine(154, 56, 154, 121);			
+			}
+		}
+		
+		
 		//! Bottom vertical divider
 		dc.drawLine(107, 121, 107, 180);
 		
@@ -422,67 +450,144 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 				dc.drawText(151, 34, Graphics.FONT_NUMBER_MEDIUM, fTimerMinsAbs + ":" + fTimerSecs, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			}	
 			dc.drawText(141, 8, Graphics.FONT_XTINY,  "Timer", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		}
-			
+		}		
+
 		if (mActivityInfo.currentSpeed < 0.447164) {
-			dc.drawLine(81, 116, 103, 116);
-			dc.drawLine(58, 116, 80, 116);
-			dc.drawLine(111, 116, 133, 116);
-			dc.drawLine(134, 116, 156, 116);
-			dc.drawText(107, 98, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawLine(80, 116, 102, 116);
+			dc.drawLine(57, 116, 79, 116);
+			dc.drawLine(110, 116, 132, 116);
+			dc.drawLine(133, 116, 155, 116);
+			dc.drawText(106, 98, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
-			dc.drawText(106, 95, Graphics.FONT_NUMBER_HOT, fmtPaceRound5(mActivityInfo.currentSpeed), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			nudge = 0;
+			if ( (mActivityInfo.currentSpeed < 2.687 && unitP == 1609.344) || (mActivityInfo.currentSpeed < 1.669 && unitP == 1000.0) ) {
+				nudge = 3;
+			}
+			dc.drawText(107 - nudge, 95, Graphics.FONT_NUMBER_HOT, fmtPaceRound5(mActivityInfo.currentSpeed), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}    	
-		dc.drawText(107, 64, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(106, 64, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		
 		//! Centre left: heart rate
-		var hrNudge = 0;
+		nudge = 0;
 		var hrBpm = (mActivityInfo.currentHeartRate > 0) ? mActivityInfo.currentHeartRate : "--";
 		if (mActivityInfo.currentHeartRate < 100) {
-			hrNudge = 2;
-		} else {
-			hrNudge = 0;
+			nudge = 2;
 		}
 		if (hrDisplay == HR_DISPLAY_BOTH) {			
-			dc.drawText(32 + hrNudge, 72, Graphics.FONT_NUMBER_MILD, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(32 + nudge, 72, Graphics.FONT_NUMBER_MILD, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(34, 104, Graphics.FONT_NUMBER_MILD, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(6, 81, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(6, 94, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else if (hrDisplay == HR_DISPLAY_ZONE) {
-			dc.drawText(33, 98, Graphics.FONT_NUMBER_MILD, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(35, 71, Graphics.FONT_XTINY, "HR Z.", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			if (showColourIndicators) {
+				dc.drawText(32, 95, Graphics.FONT_NUMBER_MILD, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				dc.drawText(33, 64, Graphics.FONT_XTINY, "HR Z.", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			} else {
+				nudge = 0;
+	    		if ( (mActivityInfo.currentSpeed < 2.687 && unitP == 1609.344) || (mActivityInfo.currentSpeed < 1.669 && unitP == 1000.0) ) {
+					nudge = 3;
+				}
+				dc.drawText(30 - nudge, 95, Graphics.FONT_NUMBER_MEDIUM, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				dc.drawText(29, 64, Graphics.FONT_XTINY, "HR Zone", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			}
 		} else { //if (hrDisplay == HR_DISPLAY_BPM) {
-			dc.drawText(32 + hrNudge, 98, Graphics.FONT_NUMBER_MILD, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(33, 71, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			if (showColourIndicators) {
+				dc.drawText(32 + nudge, 95, Graphics.FONT_NUMBER_MILD, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				dc.drawText(33, 64, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			} else {
+				nudge = 0;
+	    		if ( (mActivityInfo.currentSpeed < 2.687 && unitP == 1609.344) || (mActivityInfo.currentSpeed < 1.669 && unitP == 1000.0) ) {
+					nudge = 3;
+				}
+				if (mActivityInfo.currentHeartRate < 200) {
+					nudge += 2;
+				}
+				dc.drawText(30 - nudge, 95, Graphics.FONT_NUMBER_MEDIUM, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				dc.drawText(27, 64, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			}
 		}
 		
 		//! Centre right: cadence
-    	dc.drawText(179, 98, Graphics.FONT_NUMBER_MILD, mActivityInfo.currentCadence, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		dc.drawText(180, 71, Graphics.FONT_XTINY,  "Cad.", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-	
-		//! Bottom left: average moving pace
-		if (movingSpeed < 0.447164) {
+		if (showColourIndicators) {
+    		dc.drawText(178, 95, Graphics.FONT_NUMBER_MILD, mActivityInfo.currentCadence, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER); 
+    		dc.drawText(179, 64, Graphics.FONT_XTINY,  "Cad.", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER); 
+    	} else {
+    		nudge = 0;
+    		if ( (mActivityInfo.currentSpeed < 2.687 && unitP == 1609.344) || (mActivityInfo.currentSpeed < 1.669 && unitP == 1000.0) ) {
+				nudge = 3;
+			}
+			if (mActivityInfo.currentCadence < 200) {
+				nudge -= 2;
+			}
+    		dc.drawText(185 + nudge, 95, Graphics.FONT_NUMBER_MEDIUM, mActivityInfo.currentCadence, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(187, 64, Graphics.FONT_XTINY,  "Cad.", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		}
+
+		//! Bottom left
+		var fPace = 0;
+		var lPace = "";
+		if (bottomLeftData == PACE_AVERAGE) {
+			fPace = mActivityInfo.averageSpeed;
+			lPace = "Avg. Pace";
+		} else if (bottomLeftData == PACE_MOVING) {
+			fPace = movingSpeed;
+			lPace = "Run. Pace";
+		} else if (bottomLeftData == PACE_LAP) {
+			fPace = lapSpeed;
+			lPace = "Lap Pace";
+		} else if (bottomLeftData == PACE_LAP_MOVING) {
+			fPace = lapMovingSpeed;
+			lPace = "Lap Run. P.";
+		} else if (bottomLeftData == PACE_LAST_LAP) {
+			fPace = lastLapSpeed;
+			lPace = "Last Lap P.";
+		} else if (bottomLeftData == PACE_LAST_LAP_MOVING) {
+			fPace = lastLapMovingSpeed;
+			lPace = "Last Lap R. P.";
+		}
+		if (fPace < 0.447164) {
 			dc.drawLine(26, 156, 43, 156);
 			dc.drawLine(44, 156, 61, 156);
 			dc.drawLine(69, 156, 86, 156);
 			dc.drawLine(87, 156, 104, 156);
 			dc.drawText(65, 138, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
-			dc.drawText(60, 141, Graphics.FONT_NUMBER_MEDIUM, fmtPace(movingSpeed), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(60, 141, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
-		dc.drawText(102, 167, Graphics.FONT_XTINY,  "Run. Pace", Graphics.TEXT_JUSTIFY_RIGHT|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(72, 167, Graphics.FONT_XTINY, lPace, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			
-		//! Bottom right: overall average pace
-		if (mActivityInfo.averageSpeed < 0.447164) {
+		//! Bottom right
+		fPace = 0;
+		lPace = "";
+		if (bottomRightData == PACE_AVERAGE) {
+			fPace = mActivityInfo.averageSpeed;
+			lPace = "Avg. Pace";
+		} else if (bottomRightData == PACE_MOVING) {
+			fPace = movingSpeed;
+			lPace = "Run. Pace";
+		} else if (bottomRightData == PACE_LAP) {
+			fPace = lapSpeed;
+			lPace = "Lap Pace";
+		} else if (bottomRightData == PACE_LAP_MOVING) {
+			fPace = lapMovingSpeed;
+			lPace = "Lap Run. P.";
+		} else if (bottomRightData == PACE_LAST_LAP) {
+			fPace = lastLapSpeed;
+			lPace = "Last Lap P.";
+		} else if (bottomRightData == PACE_LAST_LAP_MOVING) {
+			fPace = lastLapMovingSpeed;
+			lPace = "Last Lap R. P.";
+		}
+		if (fPace < 0.447164) {
 			dc.drawLine(111, 156, 128, 156);
 			dc.drawLine(129, 156, 146, 156);
 			dc.drawLine(154, 156, 171, 156);
 			dc.drawLine(172, 156, 189, 156);
 			dc.drawText(150, 138, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
-			dc.drawText(150, 141, Graphics.FONT_NUMBER_MEDIUM, fmtPace(mActivityInfo.averageSpeed), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(150, 141, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
-		dc.drawText(111, 167, Graphics.FONT_XTINY,  "Avg. Pace", Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(140, 167, Graphics.FONT_XTINY, lPace, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
     }
         
