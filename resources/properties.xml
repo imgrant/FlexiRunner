@@ -2,27 +2,26 @@
 
     <properties>
     	<property id="HrConfig" type="number">0</property>
-    	<property id="TopRowConfig" type="number">0</property>
     	<property id="TargetPace" type="number">0</property>
       <property id="BottomLeftConfig" type="number">1</property>
       <property id="BottomRightConfig" type="number">0</property>
       <property id="ShowColourIndicators" type="boolean">true</property>
+      <property id="TimerDisplayLimit" type="number">3599</property>
 	</properties>
 
     <strings>
        <string id="AppName">Flexirunner</string>
-       <string id="AppVersion">1.0.0</string>
+       <string id="AppVersion">1.1.0</string>
        <string id="HrConfigTitle">Heart rate display</string>
        <string id="HrConfigBpm">Show heart rate in BPM</string>
        <string id="HrConfigZone">Show as decimal zone (e.g. 4.3)</string>
        <string id="HrConfigBoth">Show heart rate (BPM) and zone together</string>
-       <string id="TopRowConfigTitle">Top row display (L-R)</string>
-       <string id="TopRowTimerLeft">Timer, Distance</string>
-       <string id="TopRowTimerRight">Distance, Timer</string>
        <string id="TargetPaceTitle">Target pace metric</string>
        <string id="BottomLeftConfigTitle">Bottom left field</string>
        <string id="BottomRightConfigTitle">Bottom right field</string>
-       <string id="ShowColourIndicatorsTitle">Show colour indicators</string>
+       <string id="TimerDisplayLimitTitle">Show times as MM:SS up to</string>
+       <string id="TimerDisplayLimit5959">59:59</string>
+       <string id="TimerDisplayLimit9959">99:59</string>
        <string id="PaceAverage">Overall average pace</string>
        <string id="PaceMoving">Moving (running) pace</string>
        <string id="PaceLap">Current lap pace</string>
@@ -37,13 +36,6 @@
     			<listEntry value="0">@Strings.HrConfigBpm</listEntry>
     			<listEntry value="1">@Strings.HrConfigZone</listEntry>
     			<listEntry value="2">@Strings.HrConfigBoth</listEntry>
-    		</settingConfig>
-    	</setting>
-
-    	<setting propertyKey="@Properties.TopRowConfig" title="@Strings.TopRowConfigTitle">
-    		<settingConfig type="list" required="true">
-    			<listEntry value="0">@Strings.TopRowTimerLeft</listEntry>
-    			<listEntry value="1">@Strings.TopRowTimerRight</listEntry>
     		</settingConfig>
     	</setting>
 
@@ -80,8 +72,11 @@
         </settingConfig>
       </setting>
 
-      <setting propertyKey="@Properties.ShowColourIndicators" title="@Strings.ShowColourIndicatorsTitle">
-        <settingConfig type="boolean" required="true" />
+      <setting propertyKey="@Properties.TimerDisplayLimit" title="@Strings.TimerDisplayLimitTitle">
+        <settingConfig type="list" required="true">
+          <listEntry value="3599">@Strings.TimerDisplayLimit5959</listEntry>
+          <listEntry value="5999">@Strings.TimerDisplayLimit9959</listEntry>
+        </settingConfig>
       </setting>
     </settings>
 
