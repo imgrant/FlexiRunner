@@ -1,81 +1,80 @@
 <resources>
 
     <properties>
-    	<property id="HrConfig" type="number">0</property>
-    	<property id="TargetPace" type="number">0</property>
-      <property id="BottomLeftConfig" type="number">1</property>
-      <property id="BottomRightConfig" type="number">0</property>
-      <property id="ShowColourIndicators" type="boolean">true</property>
-      <property id="TimerDisplayLimit" type="number">3599</property>
+    	<property id="pHR" type="number">0</property>
+    	<property id="pPace" type="number">0</property>
+      <property id="pFL" type="number">1</property>
+      <property id="pFR" type="number">0</property>
+      <property id="pTimer" type="number">3599</property>
 	</properties>
 
     <strings>
        <string id="AppName">Flexirunner</string>
        <string id="AppVersion">1.1.0</string>
-       <string id="HrConfigTitle">Heart rate display</string>
-       <string id="HrConfigBpm">Show heart rate in BPM</string>
-       <string id="HrConfigZone">Show as decimal zone (e.g. 4.3)</string>
-       <string id="HrConfigBoth">Show heart rate (BPM) and zone together</string>
-       <string id="TargetPaceTitle">Target pace metric</string>
-       <string id="BottomLeftConfigTitle">Bottom left field</string>
-       <string id="BottomRightConfigTitle">Bottom right field</string>
-       <string id="TimerDisplayLimitTitle">Show times as MM:SS up to</string>
-       <string id="TimerDisplayLimit5959">59:59</string>
-       <string id="TimerDisplayLimit9959">99:59</string>
-       <string id="PaceAverage">Overall average pace</string>
-       <string id="PaceMoving">Moving (running) pace</string>
-       <string id="PaceLap">Current lap pace</string>
-       <string id="PaceLapMoving">Current lap moving (running) pace</string>
-       <string id="PaceLastLap">Last lap pace</string>
-       <string id="PaceLastLapMoving">Last lap moving (running) pace</string>
+       <string id="lHR">Heart rate display</string>
+       <string id="eHR1">Show heart rate in BPM</string>
+       <string id="eHR2">Show as decimal zone (e.g. 4.3)</string>
+       <string id="eHR3">Show heart rate (BPM) and zone together</string>
+       <string id="lPace">Target pace metric</string>
+       <string id="lFL">Bottom left field</string>
+       <string id="lFR">Bottom right field</string>
+       <string id="lTimer">Show times as MM:SS up to</string>
+       <string id="eTimer1">59:59</string>
+       <string id="eTimer2">99:59</string>
+       <string id="ePace1">Overall average pace</string>
+       <string id="ePace2">Moving (running) pace</string>
+       <string id="ePace3">Current lap pace</string>
+       <string id="ePace4">Current lap moving (running) pace</string>
+       <string id="ePace5">Last lap pace</string>
+       <string id="ePace6">Last lap moving (running) pace</string>
     </strings>
 
     <settings>
-    	<setting propertyKey="@Properties.HrConfig" title="@Strings.HrConfigTitle">
+    	<setting propertyKey="@Properties.pHR" title="@Strings.lHR">
     		<settingConfig type="list" required="true">
-    			<listEntry value="0">@Strings.HrConfigBpm</listEntry>
-    			<listEntry value="1">@Strings.HrConfigZone</listEntry>
-    			<listEntry value="2">@Strings.HrConfigBoth</listEntry>
+    			<listEntry value="0">@Strings.eHR1</listEntry>
+    			<listEntry value="1">@Strings.eHR2</listEntry>
+    			<listEntry value="2">@Strings.eHR3</listEntry>
     		</settingConfig>
     	</setting>
 
-    	<setting propertyKey="@Properties.TargetPace" title="@Strings.TargetPaceTitle">
+    	<setting propertyKey="@Properties.pPace" title="@Strings.lPace">
     		<settingConfig type="list" required="true">
-    			<listEntry value="0">@Strings.PaceAverage</listEntry>
-    			<listEntry value="1">@Strings.PaceMoving</listEntry>
-    			<listEntry value="2">@Strings.PaceLap</listEntry>
-    			<listEntry value="3">@Strings.PaceLapMoving</listEntry>
-    			<listEntry value="4">@Strings.PaceLastLap</listEntry>
-    			<listEntry value="5">@Strings.PaceLastLapMoving</listEntry>
+    			<listEntry value="0">@Strings.ePace1</listEntry>
+    			<listEntry value="1">@Strings.ePace2</listEntry>
+    			<listEntry value="2">@Strings.ePace3</listEntry>
+    			<listEntry value="3">@Strings.ePace4</listEntry>
+    			<listEntry value="4">@Strings.ePace5</listEntry>
+    			<listEntry value="5">@Strings.ePace6</listEntry>
     		</settingConfig>
     	</setting>
 
-      <setting propertyKey="@Properties.BottomLeftConfig" title="@Strings.BottomLeftConfigTitle">
+      <setting propertyKey="@Properties.pFL" title="@Strings.lFL">
         <settingConfig type="list" required="true">
-          <listEntry value="0">@Strings.PaceAverage</listEntry>
-          <listEntry value="1">@Strings.PaceMoving</listEntry>
-          <listEntry value="2">@Strings.PaceLap</listEntry>
-          <listEntry value="3">@Strings.PaceLapMoving</listEntry>
-          <listEntry value="4">@Strings.PaceLastLap</listEntry>
-          <listEntry value="5">@Strings.PaceLastLapMoving</listEntry>
+          <listEntry value="0">@Strings.ePace1</listEntry>
+          <listEntry value="1">@Strings.ePace2</listEntry>
+          <listEntry value="2">@Strings.ePace3</listEntry>
+          <listEntry value="3">@Strings.ePace4</listEntry>
+          <listEntry value="4">@Strings.ePace5</listEntry>
+          <listEntry value="5">@Strings.ePace6</listEntry>
         </settingConfig>
       </setting>
 
-      <setting propertyKey="@Properties.BottomRightConfig" title="@Strings.BottomRightConfigTitle">
+      <setting propertyKey="@Properties.pFR" title="@Strings.lFR">
         <settingConfig type="list" required="true">
-          <listEntry value="0">@Strings.PaceAverage</listEntry>
-          <listEntry value="1">@Strings.PaceMoving</listEntry>
-          <listEntry value="2">@Strings.PaceLap</listEntry>
-          <listEntry value="3">@Strings.PaceLapMoving</listEntry>
-          <listEntry value="4">@Strings.PaceLastLap</listEntry>
-          <listEntry value="5">@Strings.PaceLastLapMoving</listEntry>
+          <listEntry value="0">@Strings.ePace1</listEntry>
+          <listEntry value="1">@Strings.ePace2</listEntry>
+          <listEntry value="2">@Strings.ePace3</listEntry>
+          <listEntry value="3">@Strings.ePace4</listEntry>
+          <listEntry value="4">@Strings.ePace5</listEntry>
+          <listEntry value="5">@Strings.ePace6</listEntry>
         </settingConfig>
       </setting>
 
-      <setting propertyKey="@Properties.TimerDisplayLimit" title="@Strings.TimerDisplayLimitTitle">
+      <setting propertyKey="@Properties.pTimer" title="@Strings.lTimer">
         <settingConfig type="list" required="true">
-          <listEntry value="3599">@Strings.TimerDisplayLimit5959</listEntry>
-          <listEntry value="5999">@Strings.TimerDisplayLimit9959</listEntry>
+          <listEntry value="3599">@Strings.eTimer1</listEntry>
+          <listEntry value="5999">@Strings.eTimer2</listEntry>
         </settingConfig>
       </setting>
     </settings>

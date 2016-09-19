@@ -11,6 +11,7 @@
 
         <iq:permissions>
             <iq:uses-permission id="UserProfile"/>
+            <iq:uses-permission id="Ant"/>
         </iq:permissions>
 
         <iq:languages/>

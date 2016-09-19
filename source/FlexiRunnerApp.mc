@@ -8,7 +8,6 @@ class FlexiRunnerApp extends Toybox.Application.AppBase {
     function getInitialView() {
         return [ new FlexiRunnerView() ];
     }
-
 }
 
 
@@ -66,19 +65,18 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var lastLapTimerTime = 0;
 	hidden var lastLapMovingSpeed = 0.0;
 	hidden var lastLapElapsedDistance = 0.0;
-	hidden var lastLapSpeed = 0.0;
-   
+	hidden var lastLapSpeed = 0.0;  
 
     function initialize() {
         DataField.initialize();  
         
  		hrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
  		var mApp = Application.getApp();
- 		hrDisplay 				= 1;//mApp.getProperty("HrConfig");	 
- 		targetPaceMetric		= mApp.getProperty("TargetPace");
- 		bottomLeftData			= mApp.getProperty("BottomLeftConfig");
- 		bottomRightData			= mApp.getProperty("BottomRightConfig");
- 		timerDisplayLimit		= mApp.getProperty("TimerDisplayLimit");
+ 		hrDisplay 				= mApp.getProperty("pHR");	 
+ 		targetPaceMetric		= mApp.getProperty("pPace");
+ 		bottomLeftData			= mApp.getProperty("pFL");
+ 		bottomRightData			= mApp.getProperty("pFR");
+ 		timerDisplayLimit		= mApp.getProperty("pTimer");
  
         if (System.getDeviceSettings().paceUnits == System.UNIT_METRIC) {
         	unitP = 1000.0;
@@ -215,7 +213,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		} else {
 			paceDeviation = null;
 		}
-/*	
+		/*	
 		var stats = System.getSystemStats();
         var memUsed = stats.usedMemory.toString();
         var memTotal = stats.totalMemory.toString();
@@ -248,10 +246,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		System.println("Last lap speed: " + lastLapSpeed);
 		System.println("Last lap moving (running) speed: " + lastLapMovingSpeed);
 		System.println("==================================================");
-/**/
-		mCurrentSpeed = 3.2;
+		/**/
+		/*
+		mCurrentSpeed = 1.8;
 		mAverageSpeed = 3.0;
 		movingSpeed = 2.8;
+		mTimerTime = 11000;
+		mElapsedDistance = 24187;
+		/**/
     }
 
     //! Store last lap quantities and set lap markers
@@ -301,19 +303,18 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	if (hrDisplay == 2) {
     		dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_WHITE);
         	dc.setPenWidth(2);
-        	if ( (unitP == 1609.344 && mCurrentSpeed < 2.687) || (unitP == 1000.0 && mCurrentSpeed < 1.669) ) {
-				dc.drawLine(0, 90, 55, 90);
+        	if (testDoubleDigitSpeed(mCurrentSpeed)) {
+				dc.drawLine(0, 93, 64, 93);
 			} else {
-        		dc.drawLine(0, 90, 60, 90);
+        		dc.drawLine(0, 93, 70, 93);
         	}
     	}
 
     	//!
     	//! Draw colour indicators first	
 		//!	
-		dc.setPenWidth(8);
 
-		//! Set HR zone indicator colour
+		//! HR zone indicator
 		if (hrZone < 1.0) {
     		dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);	//! No zone
 		} else if (hrZone < 2.0) {
@@ -327,13 +328,32 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		} else {
 			dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);		//! Maximum
 		}
-		//dc.drawArc(111, 89, 106, dc.ARC_CLOCKWISE, 200, 158);
-		//dc.drawArc(62, 105, 72, dc.ARC_CLOCKWISE, 205, 130);
-		dc.drawArc(167, 89, 165, dc.ARC_CLOCKWISE, 192, 158);		
-		dc.fillRectangle(0, 56, 69, 18);
-		dc.fillRectangle(0, 56, 20, 26);	
+		if (hrDisplay == 2) {
+			dc.setPenWidth(18);
+			dc.drawArc(111, 93, 106, dc.ARC_CLOCKWISE, 200, 158);
+			dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+			dc.fillRectangle(0, 50, 30, 15);
+			dc.fillRectangle(0, 122, 30, 15);
+		} else {
+			dc.fillPolygon([[0, 122],
+							[8, 122],
+							[6, 116],
+							[5, 111],
+							[4, 107],
+							[4, 96],
+							[5, 92],
+							[6, 89],
+							[7, 88],
+							[8, 86],
+							[9, 85],
+							[12, 83],
+							[15, 82],
+							[75, 82],
+							[75, 65],
+							[0, 65]]);
+		}
 
-		//! Set cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
+		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
 		if (mCurrentCadence > 183) {
 			dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
 		} else if (mCurrentCadence >= 174) {
@@ -347,12 +367,23 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		}  else {
 			dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
 		}
-		//dc.drawArc(103, 89, 106, dc.ARC_CLOCKWISE, 20, 340);
-		//dc.drawArc(142, 100, 80, dc.ARC_CLOCKWISE, 50, 335);
-		dc.drawArc(47, 89, 165, dc.ARC_CLOCKWISE, 22, 348);
-		dc.fillRectangle(144, 56, 71, 18);
-		dc.fillRectangle(195, 56, 20, 26);
-
+		dc.fillPolygon([[215, 122],
+						[207, 122],
+						[209, 116],
+						[210, 111],
+						[211, 107],
+						[211, 96],
+						[210, 92],
+						[209, 89],
+						[208, 88],
+						[207, 86],
+						[206, 85],
+						[203, 83],
+						[200, 82],
+						[140, 82],
+						[140, 65],
+						[215, 65]]);
+						
 		//! Current pace vs (moving) average pace colour indicator
 		if (paceDeviation == null) {
 			dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -363,49 +394,32 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		} else {
 			dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
 		}
-		if ( (unitP == 1609.344 && mCurrentSpeed < 2.687) || (unitP == 1000.0 && mCurrentSpeed < 1.669) ) {
-			dc.fillRectangle(64, 56, 85, 18);
+		if (testDoubleDigitSpeed(mCurrentSpeed)) {
+			dc.fillRectangle(64, 65, 85, 17);
 		} else {
-			dc.fillRectangle(69, 56, 75, 18);		
+			dc.fillRectangle(70, 65, 75, 17);		
 		}		
-
-		//! Chop tops and bottoms off arcs
-		dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-		dc.fillRectangle(0, 30, 215, 26);
-		dc.fillRectangle(0, 121, 215, 8);
-		dc.fillCircle(16, 84, 10);
-		dc.fillCircle(198, 84, 10);
 
     	//! Draw separator lines
         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_WHITE);
         dc.setPenWidth(2);
         //! Horizontal thirds
-		dc.drawLine(0, 56, 215, 56);
-		dc.drawLine(0, 121, 215, 121);
-		//! Top vertical divider adjustment - timer on the left, distance on the right: shift the divider to the right slightly if displaying additional seconds field for the timer
-		if (mTimerTime > timerDisplayLimit) {
-			if (mTimerTime < 7200) {
-				dc.drawLine(109, 0, 109, 56);
-			} else {
-				dc.drawLine(110, 0, 110, 56);
-			}
-		} else {
-			//! Distance on the left, timer on the right, and/or when not showing additional seconds
-			dc.drawLine(107, 0, 107, 56);
-		}
+		dc.drawLine(0, 65, 215, 65);
+		dc.drawLine(0, 122, 215, 122);
+		//! Top vertical divider
+		dc.drawLine(107, 17, 107, 65);
+		//! Top curved separator
+		dc.drawArc(107, -45, 60, dc.ARC_COUNTER_CLOCKWISE, 180, 0);
 		//! Centre vertical dividers
-		if ( (unitP == 1609.344 && mCurrentSpeed < 2.687) || (unitP == 1000.0 && mCurrentSpeed < 1.669) ) {
-			dc.drawLine(64, 56, 64, 121);
-			dc.drawLine(149, 56, 149, 121);
+		if (testDoubleDigitSpeed(mCurrentSpeed)) {
+			dc.drawLine(64, 65, 64, 122);
+			dc.drawLine(149, 65, 149, 122);
 		} else {
-			dc.drawLine(69, 56, 69, 121);
-			dc.drawLine(144, 56, 144, 121);			
-		}
-		
-		
+			dc.drawLine(70, 65, 70, 122);
+			dc.drawLine(145, 65, 145, 122);			
+		}		
 		//! Bottom vertical divider
-		dc.drawLine(107, 121, 107, 180);
-		
+		dc.drawLine(107, 122, 107, 180);
           
         //!
         //! Draw fields
@@ -416,6 +430,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(1);
 
+		dc.drawText(107, -4, Graphics.FONT_XTINY, System.getClockTime().hour.format("%d") + ":" + System.getClockTime().min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
+		
         var fDistance;
         if ((mElapsedDistance/unitD) < 100) {
 			fDistance = (mElapsedDistance/unitD).format("%.2f");
@@ -430,62 +446,61 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         //! Top row: timer and distance - additional seconds on timer causes distance field to be compressed
     	if (mTimerTime > timerDisplayLimit) {  	
     		//! Format time as h:mm(ss)
-			if (mTimerTime < 7200) {
-				//! Less than 2 hours - shift to left slightly since '1' takes up less space than other numbers
-				dc.drawText(21, 34, Graphics.FONT_NUMBER_MEDIUM, fTimerHours + ":" + fTimerMins, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
-				dc.drawText(84, 26, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
-			} else {
-				//! Over 2 hours
-				dc.drawText(23, 34, Graphics.FONT_NUMBER_MEDIUM, fTimerHours + ":" + fTimerMins, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
-				dc.drawText(85, 26, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
-			}
-			dc.drawText(152, 34, Graphics.FONT_NUMBER_MEDIUM, fDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(117, 8, Graphics.FONT_XTINY,  "Distance", Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
+    		nudge = (mTimerTime < 7200) ? 0 : 1; //! Less than 2 hours - shift to left slightly since '1' takes up less space than other numbers
+			dc.drawText(17 + nudge, 42, Graphics.FONT_NUMBER_MEDIUM, fTimerHours + ":" + fTimerMins, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(80 + nudge, 34, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			//! Format time as m:ss
-			dc.drawText(64, 34, Graphics.FONT_NUMBER_MEDIUM, fTimerMinsAbs + ":" + fTimerSecs, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(151, 34, Graphics.FONT_NUMBER_MEDIUM, fDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(117, 8, Graphics.FONT_XTINY,  "Distance", Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
-		}	
-		dc.drawText(50, 8, Graphics.FONT_XTINY,  "Timer", Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);	
+			dc.drawText(61, 42, Graphics.FONT_NUMBER_MEDIUM, fTimerMinsAbs + ":" + fTimerSecs, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		}
+
+		dc.drawText(154, 42, Graphics.FONT_NUMBER_MEDIUM, fDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(156, 17, Graphics.FONT_XTINY,  "Distance", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);	
+		dc.drawText(65, 17, Graphics.FONT_XTINY,  "Timer", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);	
 
 		if (mCurrentSpeed < 0.447164) {
-			dc.drawLine(59, 116, 80, 116);
-			dc.drawLine(81, 116, 102, 116);
-			dc.drawLine(110, 116, 131, 116);
-			dc.drawLine(132, 116, 153, 116);
-			dc.drawText(106, 98, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawLine(68, 117, 85, 117);
+			dc.drawLine(86, 117, 103, 117);
+			dc.drawLine(111, 117, 128, 117);
+			dc.drawLine(129, 117, 146, 117);
+			dc.drawText(107, 99, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			if ( (unitP == 1609.344 && mCurrentSpeed < 1.342) || (unitP == 1000.0 && mCurrentSpeed < 0.834) ) {
-				dc.drawText(106, 98, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/mCurrentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			} else if ( (unitP == 1609.344 && mCurrentSpeed < 2.687) || (unitP == 1000.0 && mCurrentSpeed < 1.669) ) {
-				dc.drawText(105, 98, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/mCurrentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				dc.drawText(107, 100, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/mCurrentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			} else if (testDoubleDigitSpeed(mCurrentSpeed)) {
+				dc.drawText(105, 100, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/mCurrentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			} else {
-				dc.drawText(107, 98, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/mCurrentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				dc.drawText(108, 100, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/mCurrentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			}
 		}    	
-		dc.drawText(107, 64, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(107, 72, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		
 		//! Centre left: heart rate
 		var hrBpm = (mCurrentHeartRate > 0) ? mCurrentHeartRate : "--";
 		nudge = (mCurrentHeartRate < 200) ? 0 : 2;
+		if (testDoubleDigitSpeed(mCurrentSpeed)) {
+			nudge -= 3;
+		}
 		if (hrDisplay == 2) {			
-			dc.drawText(32 + nudge, 72, Graphics.FONT_NUMBER_MILD, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(34, 104, Graphics.FONT_NUMBER_MILD, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(6, 81, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(6, 94, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(37, 77, Graphics.FONT_NUMBER_MILD, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(38, 106, Graphics.FONT_NUMBER_MILD, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(6, 84, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(6, 97, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else if (hrDisplay == 1) {
-			dc.drawText(38, 98, Graphics.FONT_NUMBER_MEDIUM, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(35, 64, Graphics.FONT_XTINY, "HR Zone", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(37, 100, Graphics.FONT_NUMBER_MEDIUM, hrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(35, 72, Graphics.FONT_XTINY, "HR Zone", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else { //if (hrDisplay == 0) {
-			dc.drawText(36 + nudge, 98, Graphics.FONT_NUMBER_MEDIUM, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(35, 64, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(36 + nudge, 100, Graphics.FONT_NUMBER_MEDIUM, hrBpm, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(35, 72, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 		
 		//! Centre right: cadence
-		nudge = (mCurrentCadence < 200) ? (mCurrentCadence < 100) ? 4 : 0 : 2;
-		dc.drawText(173 + nudge, 98, Graphics.FONT_NUMBER_MEDIUM, mCurrentCadence, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER); 
-		dc.drawText(179, 64, Graphics.FONT_XTINY,  "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER); 
+		nudge = (mCurrentCadence < 200) ? (mCurrentCadence < 100) ? 2 : 0 : 2;
+		if (testDoubleDigitSpeed(mCurrentSpeed)) {
+			nudge += 2;
+		}
+		dc.drawText(175 + nudge, 100, Graphics.FONT_NUMBER_MEDIUM, mCurrentCadence, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER); 
+		dc.drawText(179, 72, Graphics.FONT_XTINY,  "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER); 
 
 		//! Bottom left
 		var fPace = 0;
@@ -510,13 +525,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			lPace = "L-1 R Pace";
 		}
 		if (fPace < 0.447164) {
-			dc.drawLine(26, 156, 43, 156);
-			dc.drawLine(44, 156, 61, 156);
-			dc.drawLine(69, 156, 86, 156);
-			dc.drawLine(87, 156, 104, 156);
-			dc.drawText(65, 138, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawLine(26, 157, 43, 157);
+			dc.drawLine(44, 157, 61, 157);
+			dc.drawLine(69, 157, 86, 157);
+			dc.drawLine(87, 157, 104, 157);
+			dc.drawText(65, 139, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
-			dc.drawText(60, 141, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(64, 142, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 		dc.drawText(72, 167, Graphics.FONT_XTINY, lPace, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			
@@ -543,13 +558,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			lPace = "L-1 R Pace";
 		}
 		if (fPace < 0.447164) {
-			dc.drawLine(111, 156, 128, 156);
-			dc.drawLine(129, 156, 146, 156);
-			dc.drawLine(154, 156, 171, 156);
-			dc.drawLine(172, 156, 189, 156);
-			dc.drawText(150, 138, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawLine(111, 157, 128, 157);
+			dc.drawLine(129, 157, 146, 157);
+			dc.drawLine(154, 157, 171, 157);
+			dc.drawLine(172, 157, 189, 157);
+			dc.drawText(150, 139, Graphics.FONT_NUMBER_MEDIUM, ":", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
-			dc.drawText(150, 141, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(150, 142, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 		dc.drawText(141, 167, Graphics.FONT_XTINY, lPace, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
@@ -558,6 +573,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     
     function fmtPace(secs) {
         return ((unitP/secs).toLong() / 60).format("%0d") + ":" + ((unitP/secs).toLong() % 60).format("%02d");
+    }
+
+    function testDoubleDigitSpeed(spd) {
+    	if (unitP == 1609.344) {
+    		return (spd < 2.687);
+    	} else {
+    		return (spd < 1.669);
+    	}
     }
 
 }
