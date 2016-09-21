@@ -18,9 +18,6 @@
        <string id="lPace">Target pace metric</string>
        <string id="lFL">Bottom left field</string>
        <string id="lFR">Bottom right field</string>
-       <string id="lTimer">Show times as MM:SS up to</string>
-       <string id="eTimer1">59:59</string>
-       <string id="eTimer2">99:59</string>
        <string id="ePace1">Overall average pace</string>
        <string id="ePace2">Moving (running) pace</string>
        <string id="ePace3">Current lap pace</string>
@@ -70,13 +67,7 @@
           <listEntry value="5">@Strings.ePace6</listEntry>
         </settingConfig>
       </setting>
-
-      <setting propertyKey="@Properties.pTimer" title="@Strings.lTimer">
-        <settingConfig type="list" required="true">
-          <listEntry value="3599">@Strings.eTimer1</listEntry>
-          <listEntry value="5999">@Strings.eTimer2</listEntry>
-        </settingConfig>
-      </setting>
+      
     </settings>
 
     <bitmap id="LauncherIcon" filename="launcher_icon.png"></bitmap></resources>
