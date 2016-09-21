@@ -122,6 +122,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	var info = Activity.getActivityInfo();
 
     	var mColour;
+    	var labelColour;
     	var x;
     	var width;
     	if (info.currentSpeed == null || info.currentSpeed < ddSpdLimit) {	//! Set up variables for flexible centre field
@@ -225,8 +226,10 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		//! HR zone indicator
 		mColour = Graphics.COLOR_LT_GRAY;
+		labelColour = Graphics.COLOR_BLACK;
 		if (mHrZone >= 5.0) {
 			mColour = Graphics.COLOR_RED;		//! Maximum
+			labelColour = Graphics.COLOR_WHITE;
 		} else if (mHrZone >= 4.0) {
 			mColour = Graphics.COLOR_ORANGE;	//! Threshold
 		} else if (mHrZone >= 3.0) {
@@ -259,12 +262,25 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 							[75, 64],
 							[0,  64]]);
 		}
+		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
+		if (mHrDisplay == 2) {
+			dc.drawText(6, 83, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(6, 96, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		} else {
+			var lHr = "HR";
+			if (mHrDisplay == 1) {
+				lHr = "HR Zone";
+			}
+			dc.drawText(35, 71, Graphics.FONT_XTINY, lHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		}
 
 		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
 		mColour = Graphics.COLOR_LT_GRAY;
+		labelColour = Graphics.COLOR_BLACK;
 		if (info.currentCadence != null) {
 			if (info.currentCadence > 183) {
 				mColour = Graphics.COLOR_PURPLE;
+				labelColour = Graphics.COLOR_WHITE;
 			} else if (info.currentCadence >= 174) {
 				mColour = Graphics.COLOR_BLUE;
 			} else if (info.currentCadence >= 164) {
@@ -273,6 +289,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 				mColour = Graphics.COLOR_ORANGE;
 			} else if (info.currentCadence >= 120) {
 				mColour = Graphics.COLOR_RED;
+				labelColour = Graphics.COLOR_WHITE;
 			}
 		}
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
@@ -292,6 +309,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 						[140, 81],
 						[140, 64],
 						[215, 64]]);
+		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
+		dc.drawText(180, 71, Graphics.FONT_XTINY,  "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Current pace vs (moving) average pace colour indicator
 		var mTargetSpeed = 0.0;
@@ -313,6 +332,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			var paceDeviation = (info.currentSpeed / mTargetSpeed);
 			if (paceDeviation < 0.90) {	//! More than 10% slower
 				mColour = Graphics.COLOR_RED;
+				labelColour = Graphics.COLOR_WHITE;
 			} else if (paceDeviation < 0.95) {	//! 5-10% slower
 				mColour = Graphics.COLOR_ORANGE;
 			} else if (paceDeviation <= 1.05) {	//! Between 5% slower and 5% faster
@@ -321,12 +341,16 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 				mColour = Graphics.COLOR_BLUE;
 			} else {  //! More than 10% faster
 				mColour = Graphics.COLOR_PURPLE;
+				labelColour = Graphics.COLOR_WHITE;
 			}
 		} else {
 			mColour = Graphics.COLOR_LT_GRAY;
+			labelColour = Graphics.COLOR_BLACK;
 		}
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
 		dc.fillRectangle(x, 65, width, 16);
+		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
+		dc.drawText(107, 71, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
     	//! Draw separator lines
         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
@@ -339,8 +363,22 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		//! Top vertical divider
 		dc.drawLine(107, 26, 107, 64);
 
+		//! Centre vertical dividers
+		dc.drawLine(x, 64, x, 122);
+		dc.drawLine(x + width, 64, x + width, 122);
+
+		//! Bottom vertical divider
+		dc.drawLine(107, 122, 107, 180);
+
 		//! Top centre mini-field separator
-		dc.drawRoundedRectangle(90, -10, 35, 36, 4);
+		if (mLaps > 9) {
+			x = 92;
+			width = 32;
+		} else {
+			x = 96;
+			width = 25;
+		}
+		dc.drawRoundedRectangle(x, -10, width, 36, 4);
 		/*
 		dc.fillPolygon([[74,  -10],
 						[88,   15],
@@ -351,14 +389,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 						[127,  15],
 						[141, -10]]);
 		/**/
-
-		//! Centre vertical dividers
-		dc.drawLine(x, 64, x, 122);
-		dc.drawLine(x + width, 64, x + width, 122);
-
-		//! Bottom vertical divider
-		dc.drawLine(107, 122, 107, 180);
-
+		
 		//! HR field separator (if applicable)
     	if (mHrDisplay == 2) {
     		dc.drawLine(14, 93, x, 93);
@@ -387,7 +418,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         dc.setPenWidth(1);
 
 		//dc.drawText(107, -3, Graphics.FONT_XTINY, System.getClockTime().hour.format("%d") + ":" + System.getClockTime().min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
-		dc.drawText(106, -4, Graphics.FONT_NUMBER_MILD, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
+		dc.drawText(107, -4, Graphics.FONT_NUMBER_MILD, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
 		
 		var fTimerSecs = (mTimerTime % 60).format("%02d");
 		var fTimer;
@@ -420,28 +451,21 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			}
 			dc.drawText(x, 100, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/info.currentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
-		dc.drawText(107, 71, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Centre left: heart rate
 		if (mHrDisplay == 2) {
 			dc.drawText(37, 77, Graphics.FONT_NUMBER_MILD, mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(38, 106, Graphics.FONT_NUMBER_MILD, mHrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(6, 83, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(6, 96, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			var fHr = mCurrentHeartRate;
-			var lHr = "HR";
 			if (mHrDisplay == 1) {
 				fHr = mHrZone.format("%.1f");
-				lHr = "HR Zone";
 			}
 			dc.drawText(35, 100, Graphics.FONT_NUMBER_MEDIUM, fHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(35, 71, Graphics.FONT_XTINY, lHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 
 		//! Centre right: cadence
 		dc.drawText(176, 100, Graphics.FONT_NUMBER_MEDIUM, (info.currentCadence != null) ? info.currentCadence : 0, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		dc.drawText(180, 71, Graphics.FONT_XTINY,  "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Bottom left
 		var fPace = 0.0;
