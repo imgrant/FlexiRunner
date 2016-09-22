@@ -16,8 +16,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mHrZones;
 	hidden var unitP = 1000.0;
 	hidden var unitD = 1000.0;
-	hidden var ddSpdLimit = 1.669;
-	hidden var dd2SpdLimit = 0.834;
+	hidden var ddSpdLimit = 1.681;
+	hidden var dd2SpdLimit = 0.837;
 
 	hidden var mTimerDisplay = 0;
 	//! 0 => Timer
@@ -81,8 +81,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
         	unitP = 1609.344;
-        	ddSpdLimit = 2.687;
-        	dd2SpdLimit = 1.342;
+        	ddSpdLimit = 2.705;
+        	dd2SpdLimit = 1.347;
         }
 
         if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
@@ -386,6 +386,11 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawLine(x, 63, x, 122);
 		dc.drawLine(x + width, 63, x + width, 122);
 
+		//! HR field separator (if applicable)
+    	if (mHrDisplay == 2) {
+    		dc.drawLine(14, 93, x, 93);
+    	}
+    	
 		//! Bottom vertical divider
 		dc.drawLine(107, 122, 107, 180);
 
@@ -408,11 +413,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 						[127,  15],
 						[141, -10]]);
 		/**/
-		
-		//! HR field separator (if applicable)
-    	if (mHrDisplay == 2) {
-    		dc.drawLine(14, 93, x, 93);
-    	}
+
 
 		//! Fill in top centre mini-field polygon
 		/*

@@ -13,7 +13,9 @@
             <iq:uses-permission id="UserProfile"/>
         </iq:permissions>
 
-        <iq:languages/>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+        </iq:languages>
 
     </iq:application>
 </iq:manifest>

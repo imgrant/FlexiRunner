@@ -11,7 +11,7 @@
 
     <strings>
        <string id="AppName">Flexirunner</string>
-       <string id="AppVersion">2.0.0</string>
+       <string id="AppVersion">2.0.1</string>
        <string id="lTimerDisplay">Timer field</string>
        <string id="lTimerTimer">Timer</string>
        <string id="lTimerMoving">Moving time</string>
