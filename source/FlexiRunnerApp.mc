@@ -19,6 +19,21 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var ddSpdLimit = 1.669;
 	hidden var dd2SpdLimit = 0.834;
 
+	hidden var mTimerDisplay = 0;
+	//! 0 => Timer
+	//! 1 => Moving (timer) time
+	//! 2 => Elapsed time
+	//! 3 => Lap time
+	//! 4 => Last lap time
+	//! 5 => Average lap time
+
+	hidden var mDistDisplay = 0;
+	//! 0 => Total distance
+	//! 1 => Moving distance
+	//! 2 => Lap distance
+	//! 3 => Last lap distance
+	//! 4 => Average lap time
+
 	hidden var mHrDisplay = 0;
 	//! 0 => Direct heart rate in bpm
 	//! 1 => Heart rate decimal zone (e.g. 3.5)
@@ -37,6 +52,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mTimerRunning = false;
 
 	hidden var mStoppedTime = 0;
+	hidden var mStoppedDistance = 0;
+	hidden var mLastMovingDistMarker = 0;
 
 	hidden var mTargetPaceMetric = 0;	//! Which average pace metric should be used as the reference for deviation of the current pace? (see above)
 
@@ -44,20 +61,23 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mLastLapDistMarker = 0.0;
     hidden var mLastLapTimeMarker = 0;
     hidden var mLastLapStoppedTimeMarker = 0;
+    hidden var mLastLapStoppedDistMarker = 0;
 
 	hidden var mLastLapTimerTime = 0;
 	hidden var mLastLapElapsedDistance = 0.0;
-	hidden var mLastLapStoppedTime = 0;
+	hidden var mLastLapMovingSpeed = 0.0;
 
     function initialize() {
         DataField.initialize();
 
  		mHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
  		var mApp = Application.getApp();
- 		mHrDisplay 				= mApp.getProperty("pHR");
- 		mTargetPaceMetric		= mApp.getProperty("pPace");
- 		mBottomLeftMetric		= mApp.getProperty("pFL");
- 		mBottomRightMetric		= mApp.getProperty("pFR");
+ 		mTimerDisplay			= mApp.getProperty("pTimerDisplay");
+ 		mDistDisplay			= mApp.getProperty("pDistDisplay");
+ 		mHrDisplay 				= mApp.getProperty("pHrDisplay");
+ 		mTargetPaceMetric		= mApp.getProperty("pTargetPace");
+ 		mBottomLeftMetric		= mApp.getProperty("pBottomLeftMetric");
+ 		mBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
         	unitP = 1609.344;
@@ -77,19 +97,35 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	if (mTimerRunning && info.currentSpeed != null && info.currentSpeed < 1.8) { //! Speed below which the moving time timer is paused (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			//! Simple non-moving time calculation - relies on compute() being called every second
 			mStoppedTime++;
+			if (info.elapsedDistance != null) {
+				mStoppedDistance += info.elapsedDistance - mLastMovingDistMarker;
+			}
+		}
+		if (info.elapsedDistance != null) {
+			mLastMovingDistMarker = info.elapsedDistance;
 		}
     }
 
     //! Store last lap quantities and set lap markers
     function onTimerLap() {
     	var info = Activity.getActivityInfo();
-    	mLastLapTimerTime		= (info.timerTime - mLastLapTimeMarker) / 1000;
-    	mLastLapElapsedDistance	= info.elapsedDistance - mLastLapDistMarker;
-    	mLastLapStoppedTime		= mStoppedTime - mLastLapStoppedTimeMarker;
+    	mLastLapTimerTime			= (info.timerTime - mLastLapTimeMarker) / 1000;
+    	mLastLapElapsedDistance		= (info.elapsedDistance != null) ? info.elapsedDistance - mLastLapDistMarker : 0;
+    	var mLastLapStoppedTime		= mStoppedTime - mLastLapStoppedTimeMarker;
+    	var mLastLapStoppedDistance	= mStoppedDistance - mLastLapStoppedDistMarker;
+    	if (mLastLapTimerTime > 0
+    		&& mLastLapStoppedTime > 0
+    		&& mLastLapStoppedTime < mLastLapTimerTime
+    		&& mLastLapElapsedDistance != null) {
+    		mLastLapMovingSpeed = (mLastLapElapsedDistance - mLastLapStoppedDistance) / (mLastLapTimerTime - mLastLapStoppedTime);
+		} else {
+			mLastLapMovingSpeed = (mLastLapTimerTime > 0) ? mLastLapElapsedDistance / mLastLapTimerTime : 0.0;
+		}
     	mLaps++;
     	mLastLapDistMarker 			= info.elapsedDistance;
     	mLastLapTimeMarker 			= info.timerTime;
     	mLastLapStoppedTimeMarker	= mStoppedTime;
+    	mLastLapStoppedDistMarker	= mStoppedDistance;
     }
 
     //! Timer transitions from stopped to running state
@@ -133,16 +169,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			width = 75;
 		}    	
 
-    	//! Calculate lap distance, format total distance
-    	var fElapsedDistance = "0.00";
+    	//! Calculate lap distance
     	var mLapElapsedDistance = 0.0;
-    	 if (info.elapsedDistance != null) {
-    	 	var dist = info.elapsedDistance / unitD;
-    	 	if (dist > 100) {
-    	 		fElapsedDistance = dist.format("%.1f");
-    	 	} else {
-    	 		fElapsedDistance = dist.format("%.2f");
-    	 	}
+    	if (info.elapsedDistance != null) {
 			mLapElapsedDistance = info.elapsedDistance - mLastLapDistMarker;
     	}
 
@@ -168,14 +197,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	//! Calculate moving speeds
     	var mMovingSpeed = 0.0;
     	var mLapMovingSpeed = 0.0;
-    	var mLastLapMovingSpeed = 0.0;
     	var mLapStoppedTime = mStoppedTime - mLastLapStoppedTimeMarker;
+    	var mLapStoppedDistance = mStoppedDistance - mLastLapStoppedDistMarker;
 
     	if (mTimerTime > 0
     		&& mStoppedTime > 0
     		&& mStoppedTime < mTimerTime
     		&& info.elapsedDistance != null) {
-    		mMovingSpeed = info.elapsedDistance / (mTimerTime - mStoppedTime);
+    		mMovingSpeed = (info.elapsedDistance - mStoppedDistance) / (mTimerTime - mStoppedTime);
 		} else if (info.averageSpeed != null) {
 			mMovingSpeed = info.averageSpeed;
 		}
@@ -184,18 +213,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     		&& mLapStoppedTime > 0
     		&& mLapStoppedTime < mLapTimerTime
     		&& mLapElapsedDistance != null) {
-    		mLapMovingSpeed = mLapElapsedDistance / (mLapTimerTime - mLapStoppedTime);
+    		mLapMovingSpeed = (mLapElapsedDistance - mLapStoppedDistance) / (mLapTimerTime - mLapStoppedTime);
 		} else {
 			mLapMovingSpeed = mLapSpeed;
-		}
-
-		if (mLastLapTimerTime > 0
-    		&& mLastLapStoppedTime > 0
-    		&& mLastLapStoppedTime < mLastLapTimerTime
-    		&& mLastLapElapsedDistance != null) {
-    		mLastLapMovingSpeed = mLastLapElapsedDistance / (mLastLapTimerTime - mLastLapStoppedTime);
-		} else {
-			mLastLapMovingSpeed = mLastLapSpeed;
 		}
 
     	//! Calculate HR zone
@@ -242,7 +262,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			dc.setPenWidth(18);
 			dc.drawArc(111, 93, 106, dc.ARC_CLOCKWISE, 200, 158);
 			dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-			dc.fillRectangle(0, 50, 30, 15);
+			dc.fillRectangle(0, 49, 30, 15);
 			dc.fillRectangle(0, 122, 30, 15);
 		} else {
 			dc.fillPolygon([[0,  122],
@@ -259,8 +279,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 							[13, 82],
 							[16, 81],
 							[75, 81],
-							[75, 64],
-							[0,  64]]);
+							[75, 63],
+							[0,  63]]);
 		}
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
 		if (mHrDisplay == 2) {
@@ -271,7 +291,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			if (mHrDisplay == 1) {
 				lHr = "HR Zone";
 			}
-			dc.drawText(35, 71, Graphics.FONT_XTINY, lHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(34, 71, Graphics.FONT_XTINY, lHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 
 		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
@@ -307,8 +327,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 						[201, 82],
 						[198, 81],
 						[140, 81],
-						[140, 64],
-						[215, 64]]);
+						[140, 63],
+						[215, 63]]);
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
 		dc.drawText(180, 71, Graphics.FONT_XTINY,  "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
@@ -328,6 +348,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			mTargetSpeed = mLastLapMovingSpeed;
 		}
 
+		mColour = Graphics.COLOR_LT_GRAY;
+		labelColour = Graphics.COLOR_BLACK;
 		if (mTargetSpeed > 0.0 && info.currentSpeed != null && info.currentSpeed > 1.8) {	//! Only use the pace colour indicator when running (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			var paceDeviation = (info.currentSpeed / mTargetSpeed);
 			if (paceDeviation < 0.90) {	//! More than 10% slower
@@ -343,12 +365,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 				mColour = Graphics.COLOR_PURPLE;
 				labelColour = Graphics.COLOR_WHITE;
 			}
-		} else {
-			mColour = Graphics.COLOR_LT_GRAY;
-			labelColour = Graphics.COLOR_BLACK;
 		}
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
-		dc.fillRectangle(x, 65, width, 16);
+		dc.fillRectangle(x, 64, width, 17);
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
 		dc.drawText(107, 71, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
@@ -357,15 +376,15 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         dc.setPenWidth(2);
 
         //! Horizontal thirds
-		dc.drawLine(0, 64, 215, 64);
+		dc.drawLine(0, 63, 215, 63);
 		dc.drawLine(0, 122, 215, 122);
 
 		//! Top vertical divider
-		dc.drawLine(107, 26, 107, 64);
+		dc.drawLine(107, 26, 107, 63);
 
 		//! Centre vertical dividers
-		dc.drawLine(x, 64, x, 122);
-		dc.drawLine(x + width, 64, x + width, 122);
+		dc.drawLine(x, 63, x, 122);
+		dc.drawLine(x + width, 63, x + width, 122);
 
 		//! Bottom vertical divider
 		dc.drawLine(107, 122, 107, 180);
@@ -420,24 +439,79 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		//dc.drawText(107, -3, Graphics.FONT_XTINY, System.getClockTime().hour.format("%d") + ":" + System.getClockTime().min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
 		dc.drawText(107, -4, Graphics.FONT_NUMBER_MILD, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
 		
-		var fTimerSecs = (mTimerTime % 60).format("%02d");
-		var fTimer;
-        //! Top row: time and distance
-    	if (mTimerTime > 3599) {
-    		//! Format time as h:mm(ss)
-    		fTimer = (mTimerTime / 3600).format("%d") + ":" + (mTimerTime / 60 % 60).format("%02d");
+		//! Top row: time
+		var mTime = mTimerTime;
+		var lTime = "Timer";
+		/*
+		if (mTimerDisplay == 0) {
+			mTime = mTimerTime;
+			lTime = "Timer";
+		} else
+		/**/
+		if (mTimerDisplay == 1) {
+			mTime = mTimerTime - mStoppedTime;
+			lTime = "Running";
+		} else if (mTimerDisplay == 2) {
+			mTime = (info.elapsedTime != null) ? info.elapsedTime / 1000 : 0;
+			lTime = "Elapsed";
+		} else if (mTimerDisplay == 3) {
+			mTime = mLapTimerTime;
+			lTime = "Lap Time";
+		} else if (mTimerDisplay == 4) {
+			mTime = mLastLapTimerTime;
+			lTime = "Last Lap";
+		} else if (mTimerDisplay == 5) {
+			mTime = mTimerTime / mLaps;
+			lTime = "Avg. Lap";
+		}
+
+		var fTimerSecs = (mTime % 60).format("%02d");
+		var fTimer;        
+    	if (mTime > 3599 && mTime < 36000) {
+    		//! Format time as h:mm(ss) if more than an hour (but less than 10 hours)
+    		fTimer = (mTime / 3600).format("%d") + ":" + (mTime / 60 % 60).format("%02d");
     		x = 48;
 			dc.drawText(80, 35, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			//! Format time as m:ss
-			fTimer = (mTimerTime / 60).format("%d") + ":" + fTimerSecs;
+			fTimer = (mTime / 60).format("%d") + ":" + fTimerSecs;
 			x = 61;
 		}
-		dc.drawText(x, 42, Graphics.FONT_NUMBER_MEDIUM, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(x, 41, Graphics.FONT_NUMBER_MEDIUM, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(62, 15, Graphics.FONT_XTINY,  lTime, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
-		dc.drawText(154, 42, Graphics.FONT_NUMBER_MEDIUM, fElapsedDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		dc.drawText(157, 17, Graphics.FONT_XTINY,  "Distance", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		dc.drawText(62, 17, Graphics.FONT_XTINY,  "Timer", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		//! Top row: distance
+		var mDistance = (info.elapsedDistance != null) ? info.elapsedDistance / unitD : 0;
+		var lDistance = "Distance";
+		/*
+		if (mDistDisplay == 0) {
+			mDist = (info.elapsedDistance != null) ? info.elapsedDistance / unitD : 0;
+			lDist = "Distance";
+		} else
+		/**/
+		if (mDistDisplay == 1) {
+			mDistance = (info.elapsedDistance != null) ? (info.elapsedDistance - mStoppedDistance) / unitD : 0;
+			lDistance = "Run. Dist.";
+		} else if (mDistDisplay == 2) {
+			mDistance = mLapElapsedDistance / unitD;
+			lDistance = "Lap Dist.";
+		} else if (mDistDisplay == 3) {
+			mDistance = mLastLapElapsedDistance / unitD;
+			lDistance = "L-1 Dist.";
+		} else if (mDistDisplay == 4) {
+			mDistance = (info.elapsedDistance != null) ? (info.elapsedDistance / mLaps) / unitD : 0;
+			lDistance = "Avg. Lap";
+		}
+
+		var fDistance;
+	 	if (mDistance > 100) {
+	 		fDistance = mDistance.format("%.1f");
+	 	} else {
+	 		fDistance = mDistance.format("%.2f");
+	 	}
+		dc.drawText(154, 41, Graphics.FONT_NUMBER_MEDIUM, fDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(156, 15, Graphics.FONT_XTINY,  lDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		
 
 		if (info.currentSpeed == null || info.currentSpeed < 0.447164) {
 			drawSpeedUnderlines(dc, 107, 99);
