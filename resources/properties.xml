@@ -11,7 +11,7 @@
 
     <strings>
        <string id="AppName">Flexirunner</string>
-       <string id="AppVersion">2.0.1</string>
+       <string id="AppVersion">2.0.2</string>
        <string id="lTimerDisplay">Timer field</string>
        <string id="lTimerTimer">Timer</string>
        <string id="lTimerMoving">Moving time</string>
@@ -40,6 +40,13 @@
        <string id="lLastLapRunPace">Last lap moving (running) pace</string>
     </strings>
 
+<!--
+Icon attribution:
+<div>Icons made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>
+from <a href="http://www.flaticon.com" title="Flaticon">www.flaticon.com</a> is
+licensed by <a href="http://creativecommons.org/licenses/by/3.0/"
+title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+-->
     <settings>
       <setting propertyKey="@Properties.pTimerDisplay" title="@Strings.lTimerDisplay">
         <settingConfig type="list" required="true">

@@ -48,6 +48,7 @@ Temporary Items
 
 # ConnectIQ files
 *.prg
+*.iq
 bin/*
 
 # Eclipse metadata files
