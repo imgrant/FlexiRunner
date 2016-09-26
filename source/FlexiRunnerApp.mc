@@ -472,7 +472,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     		//! Format time as h:mm(ss) if more than an hour
     		fTimer = (mTime / 3600).format("%d") + ":" + (mTime / 60 % 60).format("%02d");
     		x = 48;
-			dc.drawText(80, 35, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(80, 36, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			//! Format time as m:ss
 			fTimer = (mTime / 60).format("%d") + ":" + fTimerSecs;
