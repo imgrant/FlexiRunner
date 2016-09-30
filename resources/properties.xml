@@ -5,13 +5,14 @@
       <property id="pDistDisplay" type="number">0</property>
     	<property id="pHrDisplay" type="number">0</property>
     	<property id="pTargetPace" type="number">0</property>
+      <property id="pCentreRightMetric" type="number">0</property>
       <property id="pBottomLeftMetric" type="number">1</property>
       <property id="pBottomRightMetric" type="number">0</property>
 	</properties>
 
     <strings>
        <string id="AppName">Flexirunner</string>
-       <string id="AppVersion">2.0.3</string>
+       <string id="AppVersion">2.1.0</string>
        <string id="lTimerDisplay">Timer field</string>
        <string id="lTimerTimer">Timer</string>
        <string id="lTimerMoving">Moving time</string>
@@ -30,6 +31,9 @@
        <string id="lHrZone">Show as decimal zone (e.g. 4.3)</string>
        <string id="lHrBoth">Show heart rate (BPM) and zone together</string>
        <string id="lTargetPace">Target pace metric</string>
+       <string id="lCentreRightMetric">Centre right field</string>
+       <string id="lCadence">Current cadence</string>
+       <string id="lEconomy">Recent running economy</string>
        <string id="lBottomLeftMetric">Bottom left field</string>
        <string id="lBottomRightMetric">Bottom right field</string>
        <string id="lAvgPace">Overall average pace</string>
@@ -80,6 +84,13 @@
     			<listEntry value="5">@Strings.lLastLapRunPace</listEntry>
     		</settingConfig>
     	</setting>
+
+      <setting propertyKey="@Properties.pCentreRightMetric" title="@Strings.lCentreRightMetric">
+        <settingConfig type="list" required="true">
+          <listEntry value="0">@Strings.lCadence</listEntry>
+          <listEntry value="1">@Strings.lEconomy</listEntry>
+        </settingConfig>
+      </setting>
 
       <setting propertyKey="@Properties.pBottomLeftMetric" title="@Strings.lBottomLeftMetric">
         <settingConfig type="list" required="true">

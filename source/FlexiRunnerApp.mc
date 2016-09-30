@@ -13,13 +13,13 @@ class FlexiRunnerApp extends Toybox.Application.AppBase {
 
 class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
-	hidden var mHrZones;
+	hidden var uHrZones;
 	hidden var unitP = 1000.0;
 	hidden var unitD = 1000.0;
 	hidden var ddSpdLimit = 1.681;
 	hidden var dd2SpdLimit = 0.837;
 
-	hidden var mTimerDisplay = 0;
+	hidden var uTimerDisplay = 0;
 	//! 0 => Timer
 	//! 1 => Moving (timer) time
 	//! 2 => Elapsed time
@@ -27,20 +27,24 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	//! 4 => Last lap time
 	//! 5 => Average lap time
 
-	hidden var mDistDisplay = 0;
+	hidden var uDistDisplay = 0;
 	//! 0 => Total distance
 	//! 1 => Moving distance
 	//! 2 => Lap distance
 	//! 3 => Last lap distance
 	//! 4 => Average lap time
 
-	hidden var mHrDisplay = 0;
+	hidden var uHrDisplay = 0;
 	//! 0 => Direct heart rate in bpm
 	//! 1 => Heart rate decimal zone (e.g. 3.5)
 	//! 2 => Both bpm and zone
 
-	hidden var mBottomLeftMetric = 1;	//! Data to show in bottom left field
-	hidden var mBottomRightMetric = 0;	//! Data to show in bottom right field
+	hidden var uCentreRightMetric = 0;
+	//! 0 => Current cadence
+	//! 1 => Running economy (average over last 100 seconds)
+
+	hidden var uBottomLeftMetric = 1;	//! Data to show in bottom left field
+	hidden var uBottomRightMetric = 0;	//! Data to show in bottom right field
 	//! Paces enum:
 	//! 0 => (overall) average pace
 	//! 1 => Moving (running) pace
@@ -53,9 +57,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 	hidden var mStoppedTime = 0;
 	hidden var mStoppedDistance = 0;
-	hidden var mLastMovingDistMarker = 0;
+	hidden var mPrevElapsedDistance = 0;
 
-	hidden var mTargetPaceMetric = 0;	//! Which average pace metric should be used as the reference for deviation of the current pace? (see above)
+	hidden var uTargetPaceMetric = 0;	//! Which average pace metric should be used as the reference for deviation of the current pace? (see above)
 
 	hidden var mLaps = 1;
 	hidden var mLastLapDistMarker = 0.0;
@@ -66,18 +70,28 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mLastLapTimerTime = 0;
 	hidden var mLastLapElapsedDistance = 0.0;
 	hidden var mLastLapMovingSpeed = 0.0;
+	
+	hidden var uRestingHeartRate = 60;
+	hidden var mLastNElapsedDistance = new [100];
+	hidden var mLastNAvgHeartRate = 0.0;
+	hidden var mLastNEconomy = 0.0;
+	hidden var mTicker = 0;
 
     function initialize() {
         DataField.initialize();
 
- 		mHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
+        var mProfile = UserProfile.getProfile();
+ 		uHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
+ 		uRestingHeartRate = mProfile.restingHeartRate;
+
  		var mApp = Application.getApp();
- 		mTimerDisplay			= mApp.getProperty("pTimerDisplay");
- 		mDistDisplay			= mApp.getProperty("pDistDisplay");
- 		mHrDisplay 				= mApp.getProperty("pHrDisplay");
- 		mTargetPaceMetric		= mApp.getProperty("pTargetPace");
- 		mBottomLeftMetric		= mApp.getProperty("pBottomLeftMetric");
- 		mBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
+ 		uTimerDisplay			= mApp.getProperty("pTimerDisplay");
+ 		uDistDisplay			= mApp.getProperty("pDistDisplay");
+ 		uHrDisplay 				= mApp.getProperty("pHrDisplay");
+ 		uTargetPaceMetric		= mApp.getProperty("pTargetPace");
+ 		uCentreRightMetric		= mApp.getProperty("pCentreRightMetric");
+ 		uBottomLeftMetric		= mApp.getProperty("pBottomLeftMetric");
+ 		uBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
         	unitP = 1609.344;
@@ -89,21 +103,42 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         	unitD = 1609.344;
         }
 
+        for (var i = 0; i < mLastNElapsedDistance.size(); ++i) {
+            mLastNElapsedDistance[i] = 0.0;
+        }
     }
 
 
     //! Calculations we need to do every second even when the data field is not visible
     function compute(info) {
+    	var mElapsedDistance = (info.elapsedDistance != null) ? info.elapsedDistance : 0.0;
+    	var mDistanceIncrement = mElapsedDistance - mPrevElapsedDistance;
+    	
     	if (mTimerRunning && info.currentSpeed != null && info.currentSpeed < 1.8) { //! Speed below which the moving time timer is paused (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			//! Simple non-moving time calculation - relies on compute() being called every second
 			mStoppedTime++;
-			if (info.elapsedDistance != null) {
-				mStoppedDistance += info.elapsedDistance - mLastMovingDistMarker;
+			mStoppedDistance += mDistanceIncrement;
+		}
+		
+		//! Running economy: http://fellrnr.com/wiki/Running_Economy
+        var idx = mTicker % 100;
+        mLastNElapsedDistance[idx] = mElapsedDistance; //! Last N seconds elapsed distance history
+        if (mLastNAvgHeartRate == 0.0) {
+        	mLastNAvgHeartRate = ((info.currentHeartRate != null) ? info.currentHeartRate : 0.0);
+        	mLastNEconomy = 0.0;
+        } else {
+        	//! Exponential moving average for heart rate over last N seconds - saves memory versus storing N HR values
+        	//! Decay factor alpha set at 2/(N+1). N=100, alpha and 1-alpha have been pre-computed.
+        	mLastNAvgHeartRate = (0.01980198 * ((info.currentHeartRate != null) ? info.currentHeartRate : 0)) + 0.98019801 * mLastNAvgHeartRate;
+        	var mLastNDistance = mElapsedDistance - ( (idx == 99) ? mLastNElapsedDistance[0] : mLastNElapsedDistance[idx+1] );
+			if (mLastNDistance > 0) {
+				var t = (mTicker < 100) ? mTicker / 60.0 : 1.6667;
+				mLastNEconomy = ( 1 / ( ((mLastNAvgHeartRate - uRestingHeartRate) * t) / (mLastNDistance / 1609.344) ) ) * 100000;
 			}
-		}
-		if (info.elapsedDistance != null) {
-			mLastMovingDistMarker = info.elapsedDistance;
-		}
+        }
+		
+		mPrevElapsedDistance = mElapsedDistance;
+		mTicker++;
     }
 
     //! Store last lap quantities and set lap markers
@@ -156,7 +191,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     //! This will be called once a second when the data field is visible.
     function onUpdate(dc) {
     	var info = Activity.getActivityInfo();
-
+		
     	var mColour;
     	var labelColour;
     	var x;
@@ -223,19 +258,19 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	var mCurrentHeartRate = "--";
     	if (info.currentHeartRate != null) {
     		mCurrentHeartRate = info.currentHeartRate;
-			if (mHrZones != null) {
-		    	if (info.currentHeartRate < mHrZones[0]) {
-					mHrZone = info.currentHeartRate / mHrZones[0].toFloat();
-				} else if (info.currentHeartRate < mHrZones[1]) {
-					mHrZone = 1 + (info.currentHeartRate - mHrZones[0]) / (mHrZones[1] - mHrZones[0]).toFloat();
-				} else if (info.currentHeartRate < mHrZones[2]) {
-					mHrZone = 2 + (info.currentHeartRate - mHrZones[1]) / (mHrZones[2] - mHrZones[1]).toFloat();
-				} else if (info.currentHeartRate < mHrZones[3]) {
-					mHrZone = 3 + (info.currentHeartRate - mHrZones[2]) / (mHrZones[3] - mHrZones[2]).toFloat();
-				} else if (info.currentHeartRate < mHrZones[4]) {
-					mHrZone = 4 + (info.currentHeartRate - mHrZones[3]) / (mHrZones[4] - mHrZones[3]).toFloat();
+			if (uHrZones != null) {
+		    	if (info.currentHeartRate < uHrZones[0]) {
+					mHrZone = info.currentHeartRate / uHrZones[0].toFloat();
+				} else if (info.currentHeartRate < uHrZones[1]) {
+					mHrZone = 1 + (info.currentHeartRate - uHrZones[0]) / (uHrZones[1] - uHrZones[0]).toFloat();
+				} else if (info.currentHeartRate < uHrZones[2]) {
+					mHrZone = 2 + (info.currentHeartRate - uHrZones[1]) / (uHrZones[2] - uHrZones[1]).toFloat();
+				} else if (info.currentHeartRate < uHrZones[3]) {
+					mHrZone = 3 + (info.currentHeartRate - uHrZones[2]) / (uHrZones[3] - uHrZones[2]).toFloat();
+				} else if (info.currentHeartRate < uHrZones[4]) {
+					mHrZone = 4 + (info.currentHeartRate - uHrZones[3]) / (uHrZones[4] - uHrZones[3]).toFloat();
 				} else {
-					mHrZone = 5 + (info.currentHeartRate - mHrZones[4]) / (mHrZones[5] - mHrZones[4]).toFloat();
+					mHrZone = 5 + (info.currentHeartRate - uHrZones[4]) / (uHrZones[5] - uHrZones[4]).toFloat();
 				}
 			}
     	}
@@ -258,13 +293,15 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			mColour = Graphics.COLOR_BLUE;		//! Easy
 		} //! Else Warm-up and no zone inherit default light grey here
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
-		if (mHrDisplay == 2) {
+		if (uHrDisplay == 2) {
 			dc.setPenWidth(18);
 			dc.drawArc(111, 93, 106, dc.ARC_CLOCKWISE, 200, 158);
 			dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
 			dc.fillRectangle(0, 49, 30, 15);
 			dc.fillRectangle(0, 122, 30, 15);
 		} else {
+			dc.fillRectangle(0, 64, 107, 17);
+			/*
 			dc.fillPolygon([[0,  122],
 							[9,  122],
 							[7,  116],
@@ -281,70 +318,80 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 							[75, 81],
 							[75, 63],
 							[0,  63]]);
+			/**/
 		}
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
-		if (mHrDisplay == 2) {
+		if (uHrDisplay == 2) {
 			dc.drawText(6, 83, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(6, 96, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			var lHr = "HR";
-			if (mHrDisplay == 1) {
+			if (uHrDisplay == 1) {
 				lHr = "HR Zone";
 			}
 			dc.drawText(34, 71, Graphics.FONT_XTINY, lHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 
 		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
-		mColour = Graphics.COLOR_LT_GRAY;
 		labelColour = Graphics.COLOR_BLACK;
-		if (info.currentCadence != null) {
-			if (info.currentCadence > 183) {
-				mColour = Graphics.COLOR_PURPLE;
-				labelColour = Graphics.COLOR_WHITE;
-			} else if (info.currentCadence >= 174) {
-				mColour = Graphics.COLOR_BLUE;
-			} else if (info.currentCadence >= 164) {
-				mColour = Graphics.COLOR_GREEN;
-			} else if (info.currentCadence >= 153) {
-				mColour = Graphics.COLOR_ORANGE;
-			} else if (info.currentCadence >= 120) {
-				mColour = Graphics.COLOR_RED;
-				labelColour = Graphics.COLOR_WHITE;
+		var labelText = "";
+		if (uCentreRightMetric == 0) {
+			mColour = Graphics.COLOR_LT_GRAY;
+			if (info.currentCadence != null) {
+				if (info.currentCadence > 183) {
+					mColour = Graphics.COLOR_PURPLE;
+					labelColour = Graphics.COLOR_WHITE;
+				} else if (info.currentCadence >= 174) {
+					mColour = Graphics.COLOR_BLUE;
+				} else if (info.currentCadence >= 164) {
+					mColour = Graphics.COLOR_GREEN;
+				} else if (info.currentCadence >= 153) {
+					mColour = Graphics.COLOR_ORANGE;
+				} else if (info.currentCadence >= 120) {
+					mColour = Graphics.COLOR_RED;
+					labelColour = Graphics.COLOR_WHITE;
+				}
 			}
+			dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
+			dc.fillRectangle(108, 64, 107, 17);
+			/*
+			dc.fillPolygon([[215, 122],
+							[205, 122],
+							[207, 116],
+							[208, 111],
+							[209, 107],
+							[209, 95],
+							[208, 91],
+							[207, 88],
+							[206, 87],
+							[205, 85],
+							[204, 84],
+							[201, 82],
+							[198, 81],
+							[140, 81],
+							[140, 63],
+							[215, 63]]);
+			/**/
+			labelText = "Cadence";
+		} else if (uCentreRightMetric == 1) {
+			labelText = "Economy";
 		}
-		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
-		dc.fillPolygon([[215, 122],
-						[205, 122],
-						[207, 116],
-						[208, 111],
-						[209, 107],
-						[209, 95],
-						[208, 91],
-						[207, 88],
-						[206, 87],
-						[205, 85],
-						[204, 84],
-						[201, 82],
-						[198, 81],
-						[140, 81],
-						[140, 63],
-						[215, 63]]);
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
-		dc.drawText(180, 71, Graphics.FONT_XTINY,  "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(180, 71, Graphics.FONT_XTINY, labelText, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Current pace vs (moving) average pace colour indicator
 		var mTargetSpeed = 0.0;
-		if (mTargetPaceMetric == 0 && info.averageSpeed != null) {
+		if (uTargetPaceMetric == 0 && info.averageSpeed != null) {
 			mTargetSpeed = info.averageSpeed;
-		} else if (mTargetPaceMetric == 1) {
+		} else if (uTargetPaceMetric == 1) {
 			mTargetSpeed = mMovingSpeed;
-		} else if (mTargetPaceMetric == 2) {
+		} else if (uTargetPaceMetric == 2) {
 			mTargetSpeed = mLapSpeed;
-		} else if (mTargetPaceMetric == 3) {
+		} else if (uTargetPaceMetric == 3) {
 			mTargetSpeed = mLapMovingSpeed;
-		} else if (mTargetPaceMetric == 4) {
+		} else if (uTargetPaceMetric == 4) {
 			mTargetSpeed = mLastLapSpeed;
-		} else if (mTargetPaceMetric == 5) {
+		} else if (uTargetPaceMetric == 5) {
 			mTargetSpeed = mLastLapMovingSpeed;
 		}
 
@@ -387,7 +434,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawLine(x + width, 63, x + width, 122);
 
 		//! HR field separator (if applicable)
-    	if (mHrDisplay == 2) {
+    	if (uHrDisplay == 2) {
     		dc.drawLine(14, 93, x, 93);
     	}
     	
@@ -412,11 +459,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 						[125,  16],
 						[127,  15],
 						[141, -10]]);
-		/**/
-
-
 		//! Fill in top centre mini-field polygon
-		/*
 		dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
 		dc.fillPolygon([[76,  -12],
 						[90,   13],
@@ -444,24 +487,24 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		var mTime = mTimerTime;
 		var lTime = "Timer";
 		/*
-		if (mTimerDisplay == 0) {
+		if (uTimerDisplay == 0) {
 			mTime = mTimerTime;
 			lTime = "Timer";
 		} else
 		/**/
-		if (mTimerDisplay == 1) {
+		if (uTimerDisplay == 1) {
 			mTime = mTimerTime - mStoppedTime;
 			lTime = "Running";
-		} else if (mTimerDisplay == 2) {
+		} else if (uTimerDisplay == 2) {
 			mTime = (info.elapsedTime != null) ? info.elapsedTime / 1000 : 0;
 			lTime = "Elapsed";
-		} else if (mTimerDisplay == 3) {
+		} else if (uTimerDisplay == 3) {
 			mTime = mLapTimerTime;
 			lTime = "Lap Time";
-		} else if (mTimerDisplay == 4) {
+		} else if (uTimerDisplay == 4) {
 			mTime = mLastLapTimerTime;
 			lTime = "Last Lap";
-		} else if (mTimerDisplay == 5) {
+		} else if (uTimerDisplay == 5) {
 			mTime = mTimerTime / mLaps;
 			lTime = "Avg. Lap";
 		}
@@ -485,21 +528,21 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		var mDistance = (info.elapsedDistance != null) ? info.elapsedDistance / unitD : 0;
 		var lDistance = "Distance";
 		/*
-		if (mDistDisplay == 0) {
+		if (uDistDisplay == 0) {
 			mDist = (info.elapsedDistance != null) ? info.elapsedDistance / unitD : 0;
 			lDist = "Distance";
 		} else
 		/**/
-		if (mDistDisplay == 1) {
+		if (uDistDisplay == 1) {
 			mDistance = (info.elapsedDistance != null) ? (info.elapsedDistance - mStoppedDistance) / unitD : 0;
 			lDistance = "Run. Dist.";
-		} else if (mDistDisplay == 2) {
+		} else if (uDistDisplay == 2) {
 			mDistance = mLapElapsedDistance / unitD;
 			lDistance = "Lap Dist.";
-		} else if (mDistDisplay == 3) {
+		} else if (uDistDisplay == 3) {
 			mDistance = mLastLapElapsedDistance / unitD;
 			lDistance = "L-1 Dist.";
-		} else if (mDistDisplay == 4) {
+		} else if (uDistDisplay == 4) {
 			mDistance = (info.elapsedDistance != null) ? (info.elapsedDistance / mLaps) / unitD : 0;
 			lDistance = "Avg. Lap";
 		}
@@ -528,39 +571,47 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		}
 
 		//! Centre left: heart rate
-		if (mHrDisplay == 2) {
+		if (uHrDisplay == 2) {
 			dc.drawText(37, 77, Graphics.FONT_NUMBER_MILD, mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(38, 106, Graphics.FONT_NUMBER_MILD, mHrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		} else {
 			var fHr = mCurrentHeartRate;
-			if (mHrDisplay == 1) {
+			if (uHrDisplay == 1) {
 				fHr = mHrZone.format("%.1f");
 			}
-			dc.drawText(35, 100, Graphics.FONT_NUMBER_MEDIUM, fHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			//dc.drawText(35, 100, Graphics.FONT_NUMBER_MEDIUM, fHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(31, 100, Graphics.FONT_NUMBER_MEDIUM, fHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 
-		//! Centre right: cadence
-		dc.drawText(176, 100, Graphics.FONT_NUMBER_MEDIUM, (info.currentCadence != null) ? info.currentCadence : 0, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		//! Centre right: cadence or economy
+		//dc.drawText(176, 100, Graphics.FONT_NUMBER_MEDIUM, (info.currentCadence != null) ? info.currentCadence : 0, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		var fCentre = "";
+		if (uCentreRightMetric == 0) {
+			fCentre = (info.currentCadence != null) ? info.currentCadence : 0;
+		} else if (uCentreRightMetric == 1) {
+			fCentre = mLastNEconomy.format("%d");
+		}
+		dc.drawText(180, 100, Graphics.FONT_NUMBER_MEDIUM, fCentre, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Bottom left
 		var fPace = 0.0;
 		var lPace = "Avg. Pace";
-		if (mBottomLeftMetric == 0 && info.averageSpeed != null) {
+		if (uBottomLeftMetric == 0 && info.averageSpeed != null) {
 			fPace = info.averageSpeed;
 			//lPace = "Avg. Pace";
-		} else if (mBottomLeftMetric == 1) {
+		} else if (uBottomLeftMetric == 1) {
 			fPace = mMovingSpeed;
 			lPace = "Run. Pace";
-		} else if (mBottomLeftMetric == 2) {
+		} else if (uBottomLeftMetric == 2) {
 			fPace = mLapSpeed;
 			lPace = "Lap Pace";
-		} else if (mBottomLeftMetric == 3) {
+		} else if (uBottomLeftMetric == 3) {
 			fPace = mLapMovingSpeed;
 			lPace = "Lap R Pace";
-		} else if (mBottomLeftMetric == 4) {
+		} else if (uBottomLeftMetric == 4) {
 			fPace = mLastLapSpeed;
 			lPace = "L-1 Pace";
-		} else if (mBottomLeftMetric == 5) {
+		} else if (uBottomLeftMetric == 5) {
 			fPace = mLastLapMovingSpeed;
 			lPace = "L-1 R Pace";
 		}
@@ -574,22 +625,22 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		//! Bottom right
 		fPace = 0.0;
 		lPace = "Avg. Pace";
-		if (mBottomRightMetric == 0 && info.averageSpeed != null) {
+		if (uBottomRightMetric == 0 && info.averageSpeed != null) {
 			fPace = info.averageSpeed;
 			//lPace = "Avg. Pace";
-		} else if (mBottomRightMetric == 1) {
+		} else if (uBottomRightMetric == 1) {
 			fPace = mMovingSpeed;
 			lPace = "Run. Pace";
-		} else if (mBottomRightMetric == 2) {
+		} else if (uBottomRightMetric == 2) {
 			fPace = mLapSpeed;
 			lPace = "Lap Pace";
-		} else if (mBottomRightMetric == 3) {
+		} else if (uBottomRightMetric == 3) {
 			fPace = mLapMovingSpeed;
 			lPace = "Lap R Pace";
-		} else if (mBottomRightMetric == 4) {
+		} else if (uBottomRightMetric == 4) {
 			fPace = mLastLapSpeed;
 			lPace = "L-1 Pace";
-		} else if (mBottomRightMetric == 5) {
+		} else if (uBottomRightMetric == 5) {
 			fPace = mLastLapMovingSpeed;
 			lPace = "L-1 R Pace";
 		}
