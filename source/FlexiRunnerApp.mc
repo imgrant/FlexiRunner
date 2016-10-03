@@ -16,8 +16,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var uHrZones;
 	hidden var unitP = 1000.0;
 	hidden var unitD = 1000.0;
-	hidden var ddSpdLimit = 1.681;
-	hidden var dd2SpdLimit = 0.837;
+	hidden var ddSpdLimit = 1.673668;
+	hidden var dd2SpdLimit = 0.835080;
 
 	hidden var uTimerDisplay = 0;
 	//! 0 => Timer
@@ -41,7 +41,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 	hidden var uCentreRightMetric = 0;
 	//! 0 => Current cadence
-	//! 1 => Running economy (average over last 100 seconds)
+	//! 1 => Running economy (recent average over last N seconds)
 
 	hidden var uBottomLeftMetric = 1;	//! Data to show in bottom left field
 	hidden var uBottomRightMetric = 0;	//! Data to show in bottom right field
@@ -72,10 +72,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mLastLapMovingSpeed = 0.0;
 	
 	hidden var uRestingHeartRate = 60;
-	hidden var mLastNElapsedDistance = new [100];
+	hidden var mLastNElapsedDistance = new [60];
 	hidden var mLastNAvgHeartRate = 0.0;
 	hidden var mLastNEconomy = 0.0;
 	hidden var mTicker = 0;
+
+	hidden var mEconomyField = null;
+	hidden var mAverageEconomyField = null;
 
     function initialize() {
         DataField.initialize();
@@ -89,14 +92,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
  		uDistDisplay			= mApp.getProperty("pDistDisplay");
  		uHrDisplay 				= mApp.getProperty("pHrDisplay");
  		uTargetPaceMetric		= mApp.getProperty("pTargetPace");
- 		uCentreRightMetric		= mApp.getProperty("pCentreRightMetric");
+ 		uCentreRightMetric		= 1;//mApp.getProperty("pCentreRightMetric");
  		uBottomLeftMetric		= mApp.getProperty("pBottomLeftMetric");
  		uBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
         	unitP = 1609.344;
-        	ddSpdLimit = 2.705;
-        	dd2SpdLimit = 1.347;
+        	ddSpdLimit = 2.693508;
+        	dd2SpdLimit = 1.343931;
         }
 
         if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
@@ -106,6 +109,12 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         for (var i = 0; i < mLastNElapsedDistance.size(); ++i) {
             mLastNElapsedDistance[i] = 0.0;
         }
+
+        mEconomyField = createField("running_economy", 0, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD, :units=>"μM/rB" });
+        mAverageEconomyField = createField("average_running_economy", 1, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_SESSION, :units=>"μM/rB" });
+       
+        mEconomyField.setData(0);
+        mAverageEconomyField.setData(0);
     }
 
 
@@ -121,22 +130,39 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		}
 		
 		//! Running economy: http://fellrnr.com/wiki/Running_Economy
-        var idx = mTicker % 100;
+		//! Averaged over the last 2 minutes, with the following caveats:
+		//! Elapsed distance history is only recorded every other second (thus storing 60 values instead of 120)
+		//! An exponential moving average is used for the heart rate data (saves memory versus storing N HR values)
+		//! \-> Decay factor alpha set at 2/(N+1); N=120, alpha and 1-alpha have been pre-computed
+        var idx = (mTicker/2) % 60;
         mLastNElapsedDistance[idx] = mElapsedDistance; //! Last N seconds elapsed distance history
         if (mLastNAvgHeartRate == 0.0) {
         	mLastNAvgHeartRate = ((info.currentHeartRate != null) ? info.currentHeartRate : 0.0);
         	mLastNEconomy = 0.0;
         } else {
-        	//! Exponential moving average for heart rate over last N seconds - saves memory versus storing N HR values
-        	//! Decay factor alpha set at 2/(N+1). N=100, alpha and 1-alpha have been pre-computed.
-        	mLastNAvgHeartRate = (0.01980198 * ((info.currentHeartRate != null) ? info.currentHeartRate : 0)) + 0.98019801 * mLastNAvgHeartRate;
-        	var mLastNDistance = mElapsedDistance - ( (idx == 99) ? mLastNElapsedDistance[0] : mLastNElapsedDistance[idx+1] );
+        	mLastNAvgHeartRate = (0.0165289 * ((info.currentHeartRate != null) ? info.currentHeartRate : 0)) + 0.9834711 * mLastNAvgHeartRate;
+        	var mLastNDistance = mElapsedDistance - ( (idx == 59) ? mLastNElapsedDistance[0] : mLastNElapsedDistance[idx+1] );
 			if (mLastNDistance > 0) {
-				var t = (mTicker < 100) ? mTicker / 60.0 : 1.6667;
+				var t = (mTicker < 120) ? mTicker / 60.0 : 2.0;
 				mLastNEconomy = ( 1 / ( ((mLastNAvgHeartRate - uRestingHeartRate) * t) / (mLastNDistance / 1609.344) ) ) * 100000;
 			}
         }
-		
+
+        var mAverageEconomy = 0;
+        if (mTicker > 120) { //! Overall average economy is only computed for activities longer than 2 minutes
+	        if (info.averageHeartRate != null 
+	        	&& info.elapsedDistance != null 
+	        	&& info.timerTime != null
+	        	&& info.averageHeartRate > uRestingHeartRate
+	        	&& info.timerTime > 1000
+	        	&& info.elapsedDistance > 0) {
+	        	mAverageEconomy = ( 1 / ((info.averageHeartRate - uRestingHeartRate) * (info.timerTime / 60000.0)) / (info.elapsedDistance / 1609.344) ) * 100000;
+	        }
+    	}
+
+        mEconomyField.setData(mLastNEconomy.toNumber());
+        mAverageEconomyField.setData(mAverageEconomy.toNumber());
+
 		mPrevElapsedDistance = mElapsedDistance;
 		mTicker++;
     }
