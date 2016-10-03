@@ -34,14 +34,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	//! 3 => Last lap distance
 	//! 4 => Average lap time
 
-	hidden var uHrDisplay = 0;
-	//! 0 => Direct heart rate in bpm
-	//! 1 => Heart rate decimal zone (e.g. 3.5)
-	//! 2 => Both bpm and zone
+	hidden var uHrDisplay = false;
+	//! false => Direct heart rate in bpm
+	//! true  => Heart rate decimal zone (e.g. 3.5)
 
-	hidden var uCentreRightMetric = 0;
-	//! 0 => Current cadence
-	//! 1 => Running economy (recent average over last N seconds)
+	hidden var uCentreRightMetric = false;
+	//! false => Current cadence
+	//! true  => Running economy (recent average over last N seconds)
 
 	hidden var uBottomLeftMetric = 1;	//! Data to show in bottom left field
 	hidden var uBottomRightMetric = 0;	//! Data to show in bottom right field
@@ -92,7 +91,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
  		uDistDisplay			= mApp.getProperty("pDistDisplay");
  		uHrDisplay 				= mApp.getProperty("pHrDisplay");
  		uTargetPaceMetric		= mApp.getProperty("pTargetPace");
- 		uCentreRightMetric		= 1;//mApp.getProperty("pCentreRightMetric");
+ 		uCentreRightMetric		= mApp.getProperty("pCentreRightMetric");
  		uBottomLeftMetric		= mApp.getProperty("pBottomLeftMetric");
  		uBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
 
@@ -319,49 +318,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			mColour = Graphics.COLOR_BLUE;		//! Easy
 		} //! Else Warm-up and no zone inherit default light grey here
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
-		if (uHrDisplay == 2) {
-			dc.setPenWidth(18);
-			dc.drawArc(111, 93, 106, dc.ARC_CLOCKWISE, 200, 158);
-			dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-			dc.fillRectangle(0, 49, 30, 15);
-			dc.fillRectangle(0, 122, 30, 15);
-		} else {
-			dc.fillRectangle(0, 64, 107, 17);
-			/*
-			dc.fillPolygon([[0,  122],
-							[9,  122],
-							[7,  116],
-							[6,  111],
-							[5,  107],
-							[5,  95],
-							[6,  91],
-							[7,  88],
-							[8,  87],
-							[9,  85],
-							[10, 84],
-							[13, 82],
-							[16, 81],
-							[75, 81],
-							[75, 63],
-							[0,  63]]);
-			/**/
-		}
+		dc.fillRectangle(0, 64, 107, 17);
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
-		if (uHrDisplay == 2) {
-			dc.drawText(6, 83, Graphics.FONT_XTINY, "H", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(6, 96, Graphics.FONT_XTINY, "R", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		} else {
-			var lHr = "HR";
-			if (uHrDisplay == 1) {
-				lHr = "HR Zone";
-			}
-			dc.drawText(34, 71, Graphics.FONT_XTINY, lHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		}
+		dc.drawText(34, 71, Graphics.FONT_XTINY, (uHrDisplay) ? "HR Zone" : "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
 		labelColour = Graphics.COLOR_BLACK;
 		var labelText = "";
-		if (uCentreRightMetric == 0) {
+		if (!uCentreRightMetric) {
 			mColour = Graphics.COLOR_LT_GRAY;
 			if (info.currentCadence != null) {
 				if (info.currentCadence > 183) {
@@ -380,26 +344,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			}
 			dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
 			dc.fillRectangle(108, 64, 107, 17);
-			/*
-			dc.fillPolygon([[215, 122],
-							[205, 122],
-							[207, 116],
-							[208, 111],
-							[209, 107],
-							[209, 95],
-							[208, 91],
-							[207, 88],
-							[206, 87],
-							[205, 85],
-							[204, 84],
-							[201, 82],
-							[198, 81],
-							[140, 81],
-							[140, 63],
-							[215, 63]]);
-			/**/
 			labelText = "Cadence";
-		} else if (uCentreRightMetric == 1) {
+		} else { //if (uCentreRightMetric) {
 			labelText = "Economy";
 		}
 		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
@@ -458,11 +404,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		//! Centre vertical dividers
 		dc.drawLine(x, 63, x, 122);
 		dc.drawLine(x + width, 63, x + width, 122);
-
-		//! HR field separator (if applicable)
-    	if (uHrDisplay == 2) {
-    		dc.drawLine(14, 93, x, 93);
-    	}
     	
 		//! Bottom vertical divider
 		dc.drawLine(107, 122, 107, 180);
@@ -476,26 +417,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			width = 25;
 		}
 		dc.drawRoundedRectangle(x, -10, width, 36, 4);
-		/*
-		dc.fillPolygon([[74,  -10],
-						[88,   15],
-						[90,   16],
-						[92,   17],
-						[123,  17],
-						[125,  16],
-						[127,  15],
-						[141, -10]]);
-		//! Fill in top centre mini-field polygon
-		dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-		dc.fillPolygon([[76,  -12],
-						[90,   13],
-						[92,   14],
-						[94,   15],
-						[121,  15],
-						[123,  14],
-						[125,  13],
-						[139, -12]]);
-		/**/
 
         //!
         //! Draw fields
@@ -506,7 +427,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(1);
 
-		//dc.drawText(107, -3, Graphics.FONT_XTINY, System.getClockTime().hour.format("%d") + ":" + System.getClockTime().min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
 		dc.drawText(107, -4, Graphics.FONT_NUMBER_MILD, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
 		
 		//! Top row: time
@@ -597,24 +517,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		}
 
 		//! Centre left: heart rate
-		if (uHrDisplay == 2) {
-			dc.drawText(37, 77, Graphics.FONT_NUMBER_MILD, mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(38, 106, Graphics.FONT_NUMBER_MILD, mHrZone.format("%.1f"), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		} else {
-			var fHr = mCurrentHeartRate;
-			if (uHrDisplay == 1) {
-				fHr = mHrZone.format("%.1f");
-			}
-			//dc.drawText(35, 100, Graphics.FONT_NUMBER_MEDIUM, fHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(31, 100, Graphics.FONT_NUMBER_MEDIUM, fHr, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		}
+		dc.drawText(31, 100, Graphics.FONT_NUMBER_MEDIUM, (uHrDisplay) ? mHrZone.format("%.1f") : mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Centre right: cadence or economy
-		//dc.drawText(176, 100, Graphics.FONT_NUMBER_MEDIUM, (info.currentCadence != null) ? info.currentCadence : 0, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		var fCentre = "";
-		if (uCentreRightMetric == 0) {
+		if (!uCentreRightMetric) {
 			fCentre = (info.currentCadence != null) ? info.currentCadence : 0;
-		} else if (uCentreRightMetric == 1) {
+		} else { //if (uCentreRightMetric) {
 			fCentre = mLastNEconomy.format("%d");
 		}
 		dc.drawText(180, 100, Graphics.FONT_NUMBER_MEDIUM, fCentre, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);

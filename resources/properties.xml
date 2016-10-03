@@ -3,9 +3,9 @@
   <properties>
     <property id="pTimerDisplay" type="number">0</property>
     <property id="pDistDisplay" type="number">0</property>
-  	<property id="pHrDisplay" type="number">0</property>
+  	<property id="pHrDisplay" type="boolean">false</property>
   	<property id="pTargetPace" type="number">0</property>
-    <property id="pCentreRightMetric" type="number">0</property>
+    <property id="pCentreRightMetric" type="boolean">false</property>
     <property id="pBottomLeftMetric" type="number">1</property>
     <property id="pBottomRightMetric" type="number">0</property>
 	</properties>
@@ -21,7 +21,7 @@
 
   <strings>
     <string id="AppName">Flexirunner</string>
-    <string id="AppVersion">2.1.0</string>
+    <string id="AppVersion">3.0.0</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerMoving">Moving time</string>
@@ -35,14 +35,9 @@
     <string id="lDistLap">Current lap distance</string>
     <string id="lDistLastLap">Last lap distance</string>
     <string id="lDistAvgLap">Average lap distance</string>
-    <string id="lHrDisplay">Heart rate display</string>
-    <string id="lHrBpm">Show heart rate in BPM</string>
-    <string id="lHrZone">Show as decimal zone (e.g. 4.3)</string>
-    <string id="lHrBoth">Show heart rate (BPM) and zone together</string>
+    <string id="lHrDisplay">Show heart rate as decimal zone</string>
     <string id="lTargetPace">Target pace metric</string>
-    <string id="lCentreRightMetric">Centre right field</string>
-    <string id="lCadence">Current cadence</string>
-    <string id="lEconomy">Recent running economy</string>
+    <string id="lCentreRightMetric">Show economy instead of cadence</string>
     <string id="lBottomLeftMetric">Bottom left field</string>
     <string id="lBottomRightMetric">Bottom right field</string>
     <string id="lAvgPace">Overall average pace</string>
@@ -79,11 +74,7 @@
     </setting>
 
   	<setting propertyKey="@Properties.pHrDisplay" title="@Strings.lHrDisplay">
-  		<settingConfig type="list" required="true">
-  			<listEntry value="0">@Strings.lHrBpm</listEntry>
-  			<listEntry value="1">@Strings.lHrZone</listEntry>
-  			<listEntry value="2">@Strings.lHrBoth</listEntry>
-  		</settingConfig>
+  		<settingConfig type="boolean" required="true" />
   	</setting>
 
   	<setting propertyKey="@Properties.pTargetPace" title="@Strings.lTargetPace">
@@ -98,10 +89,7 @@
   	</setting>
 
     <setting propertyKey="@Properties.pCentreRightMetric" title="@Strings.lCentreRightMetric">
-      <settingConfig type="list" required="true">
-        <listEntry value="0">@Strings.lCadence</listEntry>
-        <listEntry value="1">@Strings.lEconomy</listEntry>
-      </settingConfig>
+      <settingConfig type="boolean" required="true" />
     </setting>
 
     <setting propertyKey="@Properties.pBottomLeftMetric" title="@Strings.lBottomLeftMetric">
