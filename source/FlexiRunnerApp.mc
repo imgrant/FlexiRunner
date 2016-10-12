@@ -30,7 +30,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	//! 1 => Moving distance
 	//! 2 => Lap distance
 	//! 3 => Last lap distance
-	//! 4 => Average lap distance
 
 	hidden var uHrDisplay = false;
 	//! false => Direct heart rate in bpm
@@ -59,23 +58,20 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var uTargetPaceMetric = 0;	//! Which average pace metric should be used as the reference for deviation of the current pace? (see above)
 
 	hidden var mLaps 					 = 1;
-	hidden var mLastLapDistMarker 		 = 0.0;
+	hidden var mLastLapDistMarker 		 = 0;
     hidden var mLastLapTimeMarker 		 = 0;
     hidden var mLastLapStoppedTimeMarker = 0;
     hidden var mLastLapStoppedDistMarker = 0;
     hidden var mLapHeartRateAccumulator  = 0;
-    //hidden var mLapEconomy 			 = 0.0;
 
 	hidden var mLastLapTimerTime 		= 0;
-	hidden var mLastLapElapsedDistance 	= 0.0;
-	hidden var mLastLapMovingSpeed 		= 0.0;
-	//hidden var mLastLapHeartRate 		= 0;
-	//hidden var mLastLapEconomy 		= 0.0;
+	hidden var mLastLapElapsedDistance 	= 0;
+	hidden var mLastLapMovingSpeed 		= 0;
 
 	hidden var uRestingHeartRate 	= 60;
-	hidden var mLastNDistanceMarker = 0.0;
-	hidden var mLastNAvgHeartRate 	= 0.0;
-	hidden var mLastNEconomy 		= 0.0;
+	hidden var mLastNDistanceMarker = 0;
+	hidden var mLastNAvgHeartRate 	= 0;
+	hidden var mLastNEconomy 		= 0;
 	
 	hidden var mTicker 		= 0;
 	hidden var mLapTicker	= 0;
@@ -101,7 +97,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
  		uBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
-        	unitP 		= 1609.344;
+        	unitP = 1609.344;
         }
 
         if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
@@ -162,7 +158,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 	        var mAverageEconomy = 0;
 	        if (mAverageHeartRate > uRestingHeartRate
-	        	&& info.timerTime > 1000
 	        	&& mElapsedDistance > 0) {
 	        	mAverageEconomy = ( 1 / ( ( (mAverageHeartRate - uRestingHeartRate) * (info.timerTime / 60000.0) ) / (mElapsedDistance / 1609.344) ) ) * 100000;
 	        }
@@ -170,7 +165,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 	        var mLapEconomy = 0;
 	        if (mLapHeartRate > uRestingHeartRate
-	        	&& info.timerTime > 1000
 	        	&& mLapElapsedDistance > 0) {
 	        	mLapEconomy = ( 1 / ( ( (mLapHeartRate - uRestingHeartRate) * (mLapTimerTime / 60000.0) ) / ( mLapElapsedDistance / 1609.344) ) ) * 100000;
 	        }
@@ -186,15 +180,11 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     	mLastLapTimerTime			= (info.timerTime - mLastLapTimeMarker) / 1000;
     	mLastLapElapsedDistance		= (info.elapsedDistance != null) ? info.elapsedDistance - mLastLapDistMarker : 0;
-    	//mLastLapHeartRate 			= mLapHeartRate;
-    	//mLastLapEconomy				= mLapEconomy;
 
     	var mLastLapStoppedTime		= mStoppedTime - mLastLapStoppedTimeMarker;
     	var mLastLapStoppedDistance	= mStoppedDistance - mLastLapStoppedDistMarker;
-    	if (mLastLapTimerTime > 0
-    		&& mLastLapStoppedTime > 0
-    		&& mLastLapStoppedTime < mLastLapTimerTime
-    		&& mLastLapElapsedDistance != null) {
+    	if (mLastLapStoppedTime < mLastLapTimerTime
+    		&& mLastLapStoppedDistance < mLastLapElapsedDistance) {
     		mLastLapMovingSpeed = (mLastLapElapsedDistance - mLastLapStoppedDistance) / (mLastLapTimerTime - mLastLapStoppedTime);
 		} else {
 			mLastLapMovingSpeed = (mLastLapTimerTime > 0) ? mLastLapElapsedDistance / mLastLapTimerTime : 0.0;
@@ -236,24 +226,24 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     //! Current activity is ended
     function onTimerReset() {
-	    mStoppedTime 		= 0;
-		mStoppedDistance 	= 0;
+	    mStoppedTime 		 = 0;
+		mStoppedDistance 	 = 0;
 		mPrevElapsedDistance = 0;
 
 		mLaps 					  = 1;
-		mLastLapDistMarker 		  = 0.0;
+		mLastLapDistMarker 		  = 0;
 	    mLastLapTimeMarker 		  = 0;
 	    mLastLapStoppedTimeMarker = 0;
 	    mLastLapStoppedDistMarker = 0;
 	    mLapHeartRateAccumulator  = 0;
 
 		mLastLapTimerTime 			= 0;
-		mLastLapElapsedDistance 	= 0.0;
-		mLastLapMovingSpeed 		= 0.0;
+		mLastLapElapsedDistance 	= 0;
+		mLastLapMovingSpeed 		= 0;
 
-		mLastNDistanceMarker = 0.0;
-		mLastNAvgHeartRate 	 = 0.0;
-		mLastNEconomy 		 = 0.0;
+		mLastNDistanceMarker = 0;
+		mLastNAvgHeartRate 	 = 0;
+		mLastNEconomy 		 = 0;
 		
 		mTicker 	= 0;
 		mLapTicker	= 0;
@@ -298,16 +288,12 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	var mLapMovingSpeed = mLapSpeed;
     	var mLapStoppedTime = mStoppedTime - mLastLapStoppedTimeMarker;
 
-    	if (mTimerTime > 0
-    		&& mStoppedTime > 0
-    		&& mStoppedTime < mTimerTime
+    	if (mStoppedTime < mTimerTime
     		&& info.elapsedDistance != null) {
     		mMovingSpeed = (info.elapsedDistance - mStoppedDistance) / (mTimerTime - mStoppedTime);
 		}
 
-		if (mLapTimerTime > 0
-    		&& mLapStoppedTime > 0
-    		&& mLapStoppedTime < mLapTimerTime) {
+		if (mLapStoppedTime < mLapTimerTime) {
     		mLapMovingSpeed = (mLapElapsedDistance - (mStoppedDistance - mLastLapStoppedDistMarker)) / (mLapTimerTime - mLapStoppedTime);
 		}
 
@@ -521,18 +507,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		} else if (uDistDisplay == 3) {
 			mDistance = mLastLapElapsedDistance / unitD;
 			lDistance = "L-1 Dist.";
-		} else if (uDistDisplay == 4) {
-			mDistance = (info.elapsedDistance != null) ? (info.elapsedDistance / mLaps) / unitD : 0;
-			lDistance = "Avg. Lap";
 		}
 
-		var fDistance;
+		var fString = "%.2f";
 	 	if (mDistance > 100) {
-	 		fDistance = mDistance.format("%.1f");
-	 	} else {
-	 		fDistance = mDistance.format("%.2f");
+	 		fString = "%.1f";
 	 	}
-		dc.drawText(154, 41, Graphics.FONT_NUMBER_MEDIUM, fDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(154, 41, Graphics.FONT_NUMBER_MEDIUM, mDistance.format(fString), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		dc.drawText(156, 15, Graphics.FONT_XTINY,  lDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		
 		//! Centre middle: current pace

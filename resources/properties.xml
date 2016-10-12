@@ -58,7 +58,6 @@
     <string id="lDistMoving">Moving distance</string>
     <string id="lDistLap">Current lap distance</string>
     <string id="lDistLastLap">Last lap distance</string>
-    <string id="lDistAvgLap">Average lap distance</string>
     <string id="lHrDisplay">Show heart rate as decimal zone</string>
     <string id="lTargetPace">Target pace metric</string>
     <string id="lCentreRightMetric">Show economy instead of cadence</string>
@@ -94,7 +93,6 @@
         <listEntry value="1">@Strings.lDistMoving</listEntry>
         <listEntry value="2">@Strings.lDistLap</listEntry>
         <listEntry value="3">@Strings.lDistLastLap</listEntry>
-        <listEntry value="4">@Strings.lDistAvgLap</listEntry>
       </settingConfig>
     </setting>
 
