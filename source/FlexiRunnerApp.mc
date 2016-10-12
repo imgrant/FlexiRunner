@@ -30,7 +30,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	//! 1 => Moving distance
 	//! 2 => Lap distance
 	//! 3 => Last lap distance
-	//! 4 => Average lap time
+	//! 4 => Average lap distance
 
 	hidden var uHrDisplay = false;
 	//! false => Direct heart rate in bpm
@@ -236,7 +236,27 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     //! Current activity is ended
     function onTimerReset() {
-    	mLaps = 1;
+	    mStoppedTime 		= 0;
+		mStoppedDistance 	= 0;
+		mPrevElapsedDistance = 0;
+
+		mLaps 					  = 1;
+		mLastLapDistMarker 		  = 0.0;
+	    mLastLapTimeMarker 		  = 0;
+	    mLastLapStoppedTimeMarker = 0;
+	    mLastLapStoppedDistMarker = 0;
+	    mLapHeartRateAccumulator  = 0;
+
+		mLastLapTimerTime 			= 0;
+		mLastLapElapsedDistance 	= 0.0;
+		mLastLapMovingSpeed 		= 0.0;
+
+		mLastNDistanceMarker = 0.0;
+		mLastNAvgHeartRate 	 = 0.0;
+		mLastNEconomy 		 = 0.0;
+		
+		mTicker 	= 0;
+		mLapTicker	= 0;
     }
 
 
