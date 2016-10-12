@@ -11,16 +11,40 @@
 	</properties>
 
   <fitContributions>
-    <fitField id="0" displayInChart="true" sortOrder = "0" precision="0"
-    chartTitle="@Strings.lEconomyChart" dataLabel="@Strings.lEconomyData"
-    unitLabel="@Strings.lEconomyUnits" fillColor="#FF0000" />
-    <fitField id="1" displayInActivitySummary="true" sortOrder = "0" precision="0"
-    dataLabel="@Strings.lEconomyData"
-    unitLabel="@Strings.lEconomyUnits" />
+    <fitField id="0"
+      displayInChart="true"
+      displayInActivityLaps="false"
+      displayInActivitySummary="false"
+      sortOrder="0"
+      precision="0"
+      chartTitle="@Strings.lEconomyChart"
+      dataLabel="@Strings.lEconomyData"
+      unitLabel="@Strings.lEconomyUnits"
+      fillColor="#FF0000" />
+    <fitField id="1"
+      displayInChart="false"
+      displayInActivityLaps="false"
+      displayInActivitySummary="true"
+      sortOrder="1"
+      precision="0"
+      dataLabel="@Strings.lEconomyAvgData"
+      unitLabel="@Strings.lEconomyUnits" />
+    <fitField id="2"
+      displayInChart="false"
+      displayInActivityLaps="true"
+      displayInActivitySummary="false"
+      sortOrder="2"
+      precision="0"
+      dataLabel="@Strings.lEconomyAvgData"
+      unitLabel="@Strings.lEconomyUnits" />
   </fitContributions>
 
   <strings>
+    <!-- Release name: -->
     <string id="AppName">Flexirunner</string>
+    <!-- Beta name: 
+    <string id="AppName">Flexirunner Beta</string>
+    -->
     <string id="AppVersion">3.0.0</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
@@ -48,6 +72,7 @@
     <string id="lLastLapRunPace">Last lap moving (running) pace</string>
     <string id="lEconomyChart">Relative running economy</string>
     <string id="lEconomyData">Economy</string>
+    <string id="lEconomyAvgData">Avg Economy</string>
     <string id="lEconomyUnits">μM/rB</string>
   </strings>
 
