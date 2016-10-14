@@ -45,7 +45,7 @@
     <!-- Beta name: 
     <string id="AppName">Flexirunner Beta</string>
     -->
-    <string id="AppVersion">3.0.3</string>
+    <string id="AppVersion">3.0.4</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerMoving">Moving time</string>
@@ -72,7 +72,7 @@
     <string id="lEconomyChart">Running Economy</string>
     <string id="lEconomyData">Economy</string>
     <string id="lEconomyAvgData">Avg Economy</string>
-    <string id="lEconomyUnits">μM/rB</string>
+    <string id="lEconomyUnits"></string>
   </strings>
 
   <settings>
