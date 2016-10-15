@@ -6,8 +6,8 @@
   	<property id="pTargetPace" type="number">0</property>    
     <property id="pBottomLeftMetric" type="number">1</property>
     <property id="pBottomRightMetric" type="number">0</property>
-    <property id="pHrDisplay" type="boolean">false</property>
     <property id="pCentreRightMetric" type="boolean">false</property>
+    <property id="pRoundedPace" type="boolean">true</property>
 	</properties>
 
   <fitContributions>
@@ -20,7 +20,7 @@
       chartTitle="@Strings.lEconomyChart"
       dataLabel="@Strings.lEconomyData"
       unitLabel="@Strings.lEconomyUnits"
-      fillColor="#FF0000" />
+      fillColor="#00FF00" />
     <fitField id="1"
       displayInChart="false"
       displayInActivityLaps="false"
@@ -37,15 +37,25 @@
       precision="0"
       dataLabel="@Strings.lEconomyAvgData"
       unitLabel="@Strings.lEconomyUnits" />
+    <fitField id="3"
+      displayInChart="true"
+      displayInActivityLaps="false"
+      displayInActivitySummary="false"
+      sortOrder="0"
+      precision="0"
+      chartTitle="@Strings.lEEChart"
+      dataLabel="@Strings.lEEData"
+      unitLabel="@Strings.lEEUnits"
+      fillColor="#FF0000" />
   </fitContributions>
 
   <strings>
     <!-- Release name: -->
     <string id="AppName">Flexirunner</string>
-    <!-- Beta name: 
+    <!-- Beta name:
     <string id="AppName">Flexirunner Beta</string>
     -->
-    <string id="AppVersion">3.0.4</string>
+    <string id="AppVersion">4.0.0</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerMoving">Moving time</string>
@@ -58,7 +68,6 @@
     <string id="lDistMoving">Moving distance</string>
     <string id="lDistLap">Current lap distance</string>
     <string id="lDistLastLap">Last lap distance</string>
-    <string id="lHrDisplay">Show heart rate as decimal zone</string>
     <string id="lTargetPace">Target pace metric</string>
     <string id="lCentreRightMetric">Show economy instead of cadence</string>
     <string id="lBottomLeftMetric">Bottom left field</string>
@@ -73,6 +82,10 @@
     <string id="lEconomyData">Economy</string>
     <string id="lEconomyAvgData">Avg Economy</string>
     <string id="lEconomyUnits"></string>
+    <string id="lEEChart">Energy Expenditure</string>
+    <string id="lEEData">Energy Expenditure</string>
+    <string id="lEEUnits">kcal/h</string>
+    <string id="lRoundedPace">Show current pace as Rounded Pace</string>
   </strings>
 
   <settings>
@@ -128,14 +141,14 @@
         <listEntry value="5">@Strings.lLastLapRunPace</listEntry>
       </settingConfig>
     </setting>
-
-    <setting propertyKey="@Properties.pHrDisplay" title="@Strings.lHrDisplay">
-      <settingConfig type="boolean" required="true" />
-    </setting>
     
     <setting propertyKey="@Properties.pCentreRightMetric" title="@Strings.lCentreRightMetric">
       <settingConfig type="boolean" required="true" />
-    </setting>    
+    </setting>
+
+    <setting propertyKey="@Properties.pRoundedPace" title="@Strings.lRoundedPace">
+      <settingConfig type="boolean" required="true" />
+    </setting>      
   </settings>
 
   <bitmap id="LauncherIcon" filename="launcher_icon.png"></bitmap></resources>

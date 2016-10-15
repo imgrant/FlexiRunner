@@ -31,13 +31,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	//! 2 => Lap distance
 	//! 3 => Last lap distance
 
-	hidden var uHrDisplay = false;
-	//! false => Direct heart rate in bpm
-	//! true  => Heart rate decimal zone (e.g. 3.5)
-
 	hidden var uCentreRightMetric = false;
 	//! false => Current cadence
 	//! true  => Running economy (recent average over last N seconds)
+
+	hidden var uRoundedPace = true;
+	//! true 	=> Show current pace as Rounded Pace (i.e. rounded to 5 second intervals)
+	//! false	=> Show current pace without rounding (i.e. 1-second resolution)
 
 	hidden var uBottomLeftMetric  = 1;	//! Data to show in bottom left field
 	hidden var uBottomRightMetric = 0;	//! Data to show in bottom right field
@@ -76,9 +76,10 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mTicker 		= 0;
 	hidden var mLapTicker	= 0;
 
-	hidden var mEconomyField 		= null;
-	hidden var mAverageEconomyField = null;
-	hidden var mLapEconomyField 	= null;
+	hidden var mEconomyField 			= null;
+	hidden var mAverageEconomyField 	= null;
+	hidden var mLapEconomyField 		= null;
+	hidden var mEnergyExpenditureField	= null;
 
     function initialize() {
         DataField.initialize();
@@ -90,11 +91,11 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
  		var mApp = Application.getApp();
  		uTimerDisplay			= mApp.getProperty("pTimerDisplay");
  		uDistDisplay			= mApp.getProperty("pDistDisplay");
- 		uHrDisplay 				= mApp.getProperty("pHrDisplay");
  		uTargetPaceMetric		= mApp.getProperty("pTargetPace");
  		uCentreRightMetric		= mApp.getProperty("pCentreRightMetric");
  		uBottomLeftMetric		= mApp.getProperty("pBottomLeftMetric");
  		uBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
+ 		uRoundedPace			= mApp.getProperty("pRoundedPace");
 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
         	unitP = 1609.344;
@@ -104,13 +105,15 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         	unitD = 1609.344;
         }
 
-        mEconomyField 		 = createField("running_economy", 0, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD });
-        mAverageEconomyField = createField("average_economy", 1, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_SESSION });
-        mLapEconomyField 	 = createField("lap_economy", 	  2, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_LAP });
+        mEconomyField 		 	= createField("running_economy", 	0, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD });
+        mAverageEconomyField 	= createField("average_economy", 	1, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_SESSION });
+        mLapEconomyField 	 	= createField("lap_economy", 	  	2, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_LAP });
+        mEnergyExpenditureField	= createField("energy_expenditure", 3, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD });
         
         mEconomyField.setData(0);
         mAverageEconomyField.setData(0);
         mLapEconomyField.setData(0);
+        mEnergyExpenditureField.setData(0);
     }
 
 
@@ -171,6 +174,12 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	        mLapEconomyField.setData(mLapEconomy.toNumber());
 	        
 	        mPrevElapsedDistance = mElapsedDistance;
+    	}
+    	
+    	if (info has :energyExpenditure) {
+    		if (info.energyExpenditure != null) {
+    			mEnergyExpenditureField.setData( (info.energyExpenditure * 60).toNumber() );
+    		}
     	}		
     }
 
@@ -256,7 +265,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     	var info = Activity.getActivityInfo();
 
     	var mColour;
-    	var labelColour;
 
     	//! Calculate lap distance
     	var mLapElapsedDistance = 0.0;
@@ -325,10 +333,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		//! HR zone indicator
 		mColour = Graphics.COLOR_LT_GRAY;
-		labelColour = Graphics.COLOR_BLACK;
 		if (mHrZone >= 5.0) {
 			mColour = Graphics.COLOR_RED;		//! Maximum
-			labelColour = Graphics.COLOR_WHITE;
 		} else if (mHrZone >= 4.0) {
 			mColour = Graphics.COLOR_ORANGE;	//! Threshold
 		} else if (mHrZone >= 3.0) {
@@ -337,19 +343,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			mColour = Graphics.COLOR_BLUE;		//! Easy
 		} //! Else Warm-up and no zone inherit default light grey here
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
-		dc.fillRectangle(0, 64, 66, 17);
-		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
-		dc.drawText(33, 71, Graphics.FONT_XTINY, (uHrDisplay) ? "HR Zone" : "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.fillRectangle(0, 64, 66, 17);		
 
 		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
-		labelColour = Graphics.COLOR_BLACK;
-		var labelText = "";
 		if (!uCentreRightMetric) {
 			mColour = Graphics.COLOR_LT_GRAY;
 			if (info.currentCadence != null) {
 				if (info.currentCadence > 183) {
 					mColour = Graphics.COLOR_PURPLE;
-					labelColour = Graphics.COLOR_WHITE;
 				} else if (info.currentCadence >= 174) {
 					mColour = Graphics.COLOR_BLUE;
 				} else if (info.currentCadence >= 164) {
@@ -358,21 +359,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 					mColour = Graphics.COLOR_ORANGE;
 				} else if (info.currentCadence >= 120) {
 					mColour = Graphics.COLOR_RED;
-					labelColour = Graphics.COLOR_WHITE;
 				}
 			}
 			dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
 			dc.fillRectangle(149, 64, 66, 17);
-			labelText = "Cadence";
-		} else { //if (uCentreRightMetric) {
-			labelText = "Economy";
 		}
-		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
-		dc.drawText(181, 71, Graphics.FONT_XTINY, labelText, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Current pace vs target pace colour indicator
 		mColour = Graphics.COLOR_LT_GRAY;
-		labelColour = Graphics.COLOR_BLACK;
 		if (info.currentSpeed != null && info.currentSpeed > 1.8) {	//! Only use the pace colour indicator when running (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			var mTargetSpeed = 0.0;
 			if (uTargetPaceMetric == 0 && info.averageSpeed != null) {
@@ -390,25 +384,17 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			}
 			if (mTargetSpeed > 0) {
 				var paceDeviation = (info.currentSpeed / mTargetSpeed);
-				if (paceDeviation < 0.90) {	//! More than 10% slower
+				if (paceDeviation < 0.95) {	//! More than 5% slower
 					mColour = Graphics.COLOR_RED;
-					labelColour = Graphics.COLOR_WHITE;
-				} else if (paceDeviation < 0.95) {	//! 5-10% slower
-					mColour = Graphics.COLOR_ORANGE;
-				} else if (paceDeviation <= 1.05) {	//! Between 5% slower and 5% faster
+				} else if (paceDeviation <= 1.05) {	//! Within +/-5% of target pace
 					mColour = Graphics.COLOR_GREEN;
-				} else if (paceDeviation <= 1.10) {	//! 5-10% faster
+				} else {  //! More than 5% faster
 					mColour = Graphics.COLOR_BLUE;
-				} else {  //! More than 10% faster
-					mColour = Graphics.COLOR_PURPLE;
-					labelColour = Graphics.COLOR_WHITE;
 				}
 			}
 		}
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
 		dc.fillRectangle(66, 64, 83, 17);
-		dc.setColor(labelColour, Graphics.COLOR_TRANSPARENT);
-		dc.drawText(107, 71, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
     	//! Draw separator lines
         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
@@ -429,23 +415,22 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawLine(107, 122, 107, 180);
 
 		//! Top centre mini-field separator
-		var x = 96;
-		var width = 25;
-		if (mLaps > 9) {
-			x = 92;
-			width = 32;
-		}
-		dc.drawRoundedRectangle(x, -10, width, 36, 4);
+		dc.drawRoundedRectangle(92, -10, 32, 36, 4);
 
-        //!
-        //! Draw fields
-        //! ===========
-        //!
-
-        //! Set text colour
+		//! Set text colour
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(1);
 
+		//! Labels
+		dc.drawText(33, 71, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(107, 71, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(181, 71, Graphics.FONT_XTINY, (uCentreRightMetric) ? "Economy" : "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+
+        //!
+        //! Draw field values
+        //! =================
+        //!        
+
+        //! Lap counter
 		dc.drawText(107, -4, Graphics.FONT_NUMBER_MILD, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
 		
 		//! Top row left: time
@@ -475,16 +460,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		}
 
 		var fTimerSecs = (mTime % 60).format("%02d");
-		var fTimer;        
+		var fTimer = (mTime / 60).format("%d") + ":" + fTimerSecs;  //! Format time as m:ss
+		var x = 61;        
     	if (mTime > 3599) {
-    		//! Format time as h:mm(ss) if more than an hour
+    		//! (Re-)format time as h:mm(ss) if more than an hour
     		fTimer = (mTime / 3600).format("%d") + ":" + (mTime / 60 % 60).format("%02d");
     		x = 48;
 			dc.drawText(80, 36, Graphics.FONT_NUMBER_MILD, fTimerSecs, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
-		} else {
-			//! Format time as m:ss
-			fTimer = (mTime / 60).format("%d") + ":" + fTimerSecs;
-			x = 61;
 		}
 		dc.drawText(x, 41, Graphics.FONT_NUMBER_MEDIUM, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		dc.drawText(62, 15, Graphics.FONT_XTINY,  lTime, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
@@ -494,8 +476,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		var lDistance = "Distance";
 		/*
 		if (uDistDisplay == 0) {
-			mDist = (info.elapsedDistance != null) ? info.elapsedDistance / unitD : 0;
-			lDist = "Distance";
+			mDistance = (info.elapsedDistance != null) ? info.elapsedDistance / unitD : 0;
+			lDistance = "Distance";
 		} else
 		/**/
 		if (uDistDisplay == 1) {
@@ -519,19 +501,21 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		//! Centre middle: current pace
 		if (info.currentSpeed == null || info.currentSpeed < 0.447164) {
 			drawSpeedUnderlines(dc, 107, 99);
-		} else {		
-			dc.drawText(107, 100, Graphics.FONT_NUMBER_MEDIUM, fmtPace(unitP/(Math.round((unitP/info.currentSpeed) / 5) * 5)), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		} else {
+			var fCurrentPace = info.currentSpeed;		
+			if (uRoundedPace) {
+				fCurrentPace = unitP/(Math.round( (unitP/info.currentSpeed) / 5 ) * 5);
+			}
+			dc.drawText(107, 100, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fCurrentPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 
 		//! Centre left: heart rate
-		dc.drawText(31, 100, Graphics.FONT_NUMBER_MEDIUM, (uHrDisplay) ? mHrZone.format("%.1f") : mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(31, 100, Graphics.FONT_NUMBER_MEDIUM, mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Centre right: cadence or economy
-		var fCentre = "";
+		var fCentre = mLastNEconomy.format("%d");
 		if (!uCentreRightMetric) {
 			fCentre = (info.currentCadence != null) ? info.currentCadence : 0;
-		} else { //if (uCentreRightMetric) {
-			fCentre = mLastNEconomy.format("%d");
 		}
 		dc.drawText(180, 100, Graphics.FONT_NUMBER_MEDIUM, fCentre, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
@@ -604,6 +588,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     function drawSpeedUnderlines(dc, x, y) {
     	var y2 = y + 18;
+        dc.setPenWidth(1);
     	dc.drawLine(x - 39, y2, x - 22, y2);
 		dc.drawLine(x - 21, y2, x - 4,  y2);
 		dc.drawLine(x + 4,  y2, x + 21, y2);
