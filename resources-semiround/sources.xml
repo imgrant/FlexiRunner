@@ -1,0 +1,5 @@
+<build>
+  <exclude file="../source/FlexiRunnerApp-round.mc" />
+  <exclude file="../source/FlexiRunnerApp-rectangle-205x148.mc" />
+  <exclude file="../source/FlexiRunnerApp-rectangle-148x205.mc" />
+</build>

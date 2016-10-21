@@ -10,6 +10,7 @@
     <property id="pRoundedPace" type="boolean">true</property>
 	</properties>
 
+
   <fitContributions>
     <fitField id="0"
       displayInChart="true"
@@ -21,7 +22,6 @@
       dataLabel="@Strings.lEconomyData"
       unitLabel="@Strings.lEconomyUnits"
       fillColor="#0fc491" />
-
     <fitField id="1"
       displayInChart="false"
       displayInActivityLaps="false"
@@ -30,7 +30,6 @@
       precision="0"
       dataLabel="@Strings.lEconomyAvgData"
       unitLabel="@Strings.lEconomyUnits" />
-
     <fitField id="2"
       displayInChart="false"
       displayInActivityLaps="true"
@@ -39,7 +38,6 @@
       precision="0"
       dataLabel="@Strings.lEconomyAvgData"
       unitLabel="@Strings.lEconomyUnits" />
-
     <fitField id="3"
       displayInChart="true"
       displayInActivityLaps="false"
@@ -51,6 +49,7 @@
       unitLabel="@Strings.lEEUnits"
       fillColor="#c4540f" />
   </fitContributions>
+
 
   <strings>
     <!-- Release name: -->
@@ -90,6 +89,7 @@
     <string id="lRoundedPace">Show current pace as Rounded Pace</string>
   </strings>
 
+
   <settings>
     <setting propertyKey="@Properties.pTimerDisplay" title="@Strings.lTimerDisplay">
       <settingConfig type="list" required="true">
@@ -100,7 +100,6 @@
         <listEntry value="4">@Strings.lTimerAvgLap</listEntry>
       </settingConfig>
     </setting>
-
     <setting propertyKey="@Properties.pDistDisplay" title="@Strings.lDistDisplay">
       <settingConfig type="list" required="true">
         <listEntry value="0">@Strings.lDistDistance</listEntry>
@@ -109,7 +108,6 @@
         <listEntry value="3">@Strings.lDistLastLap</listEntry>
       </settingConfig>
     </setting>  	
-
   	<setting propertyKey="@Properties.pTargetPace" title="@Strings.lTargetPace">
   		<settingConfig type="list" required="true">
   			<listEntry value="0">@Strings.lAvgPace</listEntry>
@@ -120,7 +118,6 @@
   			<listEntry value="5">@Strings.lLastLapRunPace</listEntry>
   		</settingConfig>
   	</setting>
-
     <setting propertyKey="@Properties.pBottomLeftMetric" title="@Strings.lBottomLeftMetric">
       <settingConfig type="list" required="true">
         <listEntry value="0">@Strings.lAvgPace</listEntry>
@@ -131,7 +128,6 @@
         <listEntry value="5">@Strings.lLastLapRunPace</listEntry>
       </settingConfig>
     </setting>
-
     <setting propertyKey="@Properties.pBottomRightMetric" title="@Strings.lBottomRightMetric">
       <settingConfig type="list" required="true">
         <listEntry value="0">@Strings.lAvgPace</listEntry>
@@ -142,14 +138,14 @@
         <listEntry value="5">@Strings.lLastLapRunPace</listEntry>
       </settingConfig>
     </setting>
-    
     <setting propertyKey="@Properties.pCentreRightMetric" title="@Strings.lCentreRightMetric">
       <settingConfig type="boolean" required="true" />
     </setting>
-
     <setting propertyKey="@Properties.pRoundedPace" title="@Strings.lRoundedPace">
       <settingConfig type="boolean" required="true" />
-    </setting>      
+    </setting>   
   </settings>
 
-  <bitmap id="LauncherIcon" filename="launcher_icon.png"></bitmap></resources>
+  <bitmap id="LauncherIcon" filename="launcher_icon.png"></bitmap>
+
+</resources>
