@@ -70,7 +70,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var uRestingHeartRate 	= 60;
 	hidden var mLastNDistanceMarker = 0;
 	hidden var mLastNAvgHeartRate 	= 0;
-	hidden var mLastNEconomy 		= 0;
+	hidden var mLastNEconomySmooth	= 0;
 	
 	hidden var mTicker 		= 0;
 	hidden var mLapTicker	= 0;
@@ -146,17 +146,18 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			//! Averaged over the last 30 seconds, with the caveat that an exponential moving average
 			//! is used for the heart rate data (saves memory versus storing N HR values)
 			//! \-> Decay factor alpha set at 2/(N+1); N=30, alpha and 1-alpha have been pre-computed
+	        var mLastNEconomy = 0;
 	        if (mLastNAvgHeartRate == 0.0) {
 	        	mLastNAvgHeartRate = mCurrentHeartRate;
-	        	mLastNEconomy = 0.0;
 	        } else {
 	        	mLastNAvgHeartRate = (0.064516 * mCurrentHeartRate) + (0.935484 * mLastNAvgHeartRate);
-				if (mLastNElapsedDistance > 0) {
-					var t = (mTicker < 30) ? mTicker / 30.0 : 0.5;
-					mLastNEconomy = ( 1 / ( ((mLastNAvgHeartRate - uRestingHeartRate) * t) / (mLastNElapsedDistance / 1609.344) ) ) * 100000;
-				}
 	        }
-	        mEconomyField.setData(mLastNEconomy.toNumber());
+			if (mLastNElapsedDistance > 0) {
+				var t = (mTicker < 30) ? mTicker / 60.0 : 0.5;
+				mLastNEconomy = ( 1 / ( ((mLastNAvgHeartRate - uRestingHeartRate) * t) / (mLastNElapsedDistance / 1609.344) ) ) * 100000;
+			}
+	        mLastNEconomySmooth = (0.222222 * mLastNEconomy) + (0.777777 * mLastNEconomySmooth);
+	        mEconomyField.setData(mLastNEconomySmooth.toNumber());
 
 	        var mAverageEconomy = 0;
 	        if (mAverageHeartRate > uRestingHeartRate
@@ -251,7 +252,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		mLastNDistanceMarker = 0;
 		mLastNAvgHeartRate 	 = 0;
-		mLastNEconomy 		 = 0;
+		mLastNEconomySmooth	 = 0;
 		
 		mTicker 	= 0;
 		mLapTicker	= 0;
@@ -509,7 +510,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawText(31, 100, Graphics.FONT_NUMBER_MEDIUM, mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Centre right: cadence or economy
-		var fCentre = mLastNEconomy.format("%d");
+		var fCentre = mLastNEconomySmooth.format("%d");
 		if (!uCentreRightMetric) {
 			fCentre = (info.currentCadence != null) ? info.currentCadence : 0;
 		}
