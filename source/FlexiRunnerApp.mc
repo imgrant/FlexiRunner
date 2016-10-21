@@ -20,10 +20,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var uTimerDisplay = 0;
 	//! 0 => Timer
 	//! 1 => Moving (timer) time
-	//! 2 => Elapsed time
-	//! 3 => Lap time
-	//! 4 => Last lap time
-	//! 5 => Average lap time
+	//! 2 => Lap time
+	//! 3 => Last lap time
+	//! 4 => Average lap time
 
 	hidden var uDistDisplay = 0;
 	//! 0 => Total distance
@@ -108,7 +107,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         mEconomyField 		 	= createField("running_economy", 	0, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD });
         mAverageEconomyField 	= createField("average_economy", 	1, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_SESSION });
         mLapEconomyField 	 	= createField("lap_economy", 	  	2, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_LAP });
-        mEnergyExpenditureField	= createField("energy_expenditure", 3, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD });
+        mEnergyExpenditureField	= createField("energy_expenditure", 3, FitContributor.DATA_TYPE_UINT16, { :mesgType=>FitContributor.MESG_TYPE_RECORD, :units=>"kcal/h" });
         
         mEconomyField.setData(0);
         mAverageEconomyField.setData(0);
@@ -446,15 +445,12 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			mTime = mTimerTime - mStoppedTime;
 			lTime = "Running";
 		} else if (uTimerDisplay == 2) {
-			mTime = (info.elapsedTime != null) ? info.elapsedTime / 1000 : 0;
-			lTime = "Elapsed";
-		} else if (uTimerDisplay == 3) {
 			mTime = mLapTimerTime;
 			lTime = "Lap Time";
-		} else if (uTimerDisplay == 4) {
+		} else if (uTimerDisplay == 3) {
 			mTime = mLastLapTimerTime;
 			lTime = "Last Lap";
-		} else if (uTimerDisplay == 5) {
+		} else if (uTimerDisplay == 4) {
 			mTime = mTimerTime / mLaps;
 			lTime = "Avg. Lap";
 		}

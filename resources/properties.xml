@@ -15,12 +15,13 @@
       displayInChart="true"
       displayInActivityLaps="false"
       displayInActivitySummary="false"
-      sortOrder="0"
+      sortOrder="1"
       precision="0"
       chartTitle="@Strings.lEconomyChart"
       dataLabel="@Strings.lEconomyData"
       unitLabel="@Strings.lEconomyUnits"
-      fillColor="#00FF00" />
+      fillColor="#0fc491" />
+
     <fitField id="1"
       displayInChart="false"
       displayInActivityLaps="false"
@@ -29,14 +30,16 @@
       precision="0"
       dataLabel="@Strings.lEconomyAvgData"
       unitLabel="@Strings.lEconomyUnits" />
+
     <fitField id="2"
       displayInChart="false"
       displayInActivityLaps="true"
       displayInActivitySummary="false"
-      sortOrder="2"
+      sortOrder="1"
       precision="0"
       dataLabel="@Strings.lEconomyAvgData"
       unitLabel="@Strings.lEconomyUnits" />
+
     <fitField id="3"
       displayInChart="true"
       displayInActivityLaps="false"
@@ -46,7 +49,7 @@
       chartTitle="@Strings.lEEChart"
       dataLabel="@Strings.lEEData"
       unitLabel="@Strings.lEEUnits"
-      fillColor="#FF0000" />
+      fillColor="#c4540f" />
   </fitContributions>
 
   <strings>
@@ -55,11 +58,10 @@
     <!-- Beta name:
     <string id="AppName">Flexirunner Beta</string>
     -->
-    <string id="AppVersion">4.0.0</string>
+    <string id="AppVersion">4.1.0</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerMoving">Moving time</string>
-    <string id="lTimerElapsed">Elapsed time</string>
     <string id="lTimerLap">Current lap time</string>
     <string id="lTimerLastLap">Last lap time</string>
     <string id="lTimerAvgLap">Average lap time</string>
@@ -81,7 +83,7 @@
     <string id="lEconomyChart">Running Economy</string>
     <string id="lEconomyData">Economy</string>
     <string id="lEconomyAvgData">Avg Economy</string>
-    <string id="lEconomyUnits"></string>
+    <string id="lEconomyUnits"> </string>
     <string id="lEEChart">Energy Expenditure</string>
     <string id="lEEData">Energy Expenditure</string>
     <string id="lEEUnits">kcal/h</string>
@@ -93,10 +95,9 @@
       <settingConfig type="list" required="true">
         <listEntry value="0">@Strings.lTimerTimer</listEntry>
         <listEntry value="1">@Strings.lTimerMoving</listEntry>
-        <listEntry value="2">@Strings.lTimerElapsed</listEntry>
-        <listEntry value="3">@Strings.lTimerLap</listEntry>
-        <listEntry value="4">@Strings.lTimerLastLap</listEntry>
-        <listEntry value="5">@Strings.lTimerAvgLap</listEntry>
+        <listEntry value="2">@Strings.lTimerLap</listEntry>
+        <listEntry value="3">@Strings.lTimerLastLap</listEntry>
+        <listEntry value="4">@Strings.lTimerAvgLap</listEntry>
       </settingConfig>
     </setting>
 
