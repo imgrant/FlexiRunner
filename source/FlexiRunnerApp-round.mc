@@ -16,6 +16,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var uHrZones;
 	hidden var unitP = 1000.0;
 	hidden var unitD = 1000.0;
+	
+	hidden var mBgColour;
 
 	hidden var uTimerDisplay = 0;
 	//! 0 => Timer
@@ -82,6 +84,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     function initialize() {
         DataField.initialize();
+        
+        mBgColour = (getBackgroundColor() == Graphics.COLOR_BLACK) ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
 
         var mProfile 		= UserProfile.getProfile();
  		uHrZones 			= UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
@@ -257,8 +261,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		mTicker 	= 0;
 		mLapTicker	= 0;
     }
-
-
+    
+    
     //! Do necessary calculations and draw fields.
     //! This will be called once a second when the data field is visible.
     function onUpdate(dc) {
@@ -418,7 +422,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawRoundedRectangle(92, -8, 32, 36, 4);
 
 		//! Set text colour
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(mBgColour, Graphics.COLOR_TRANSPARENT);
 
 		//! Labels
 		dc.drawText(33, 87, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
