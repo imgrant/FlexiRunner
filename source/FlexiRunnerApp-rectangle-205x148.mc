@@ -508,33 +508,33 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		//! Bottom left
 		var fieldValue 	= 0.0;
-		var fieldLabel 	= "Avg. Pace";
+		var fieldLabel 	= "Avg";
 		var isPace 		= true;
 		if (uBottomLeftMetric == 0 && info.averageSpeed != null) {
 			fieldValue = info.averageSpeed;
-			//fieldLabel = "Avg. Pace";
+			//fieldLabel = "Avg";
 		} else if (uBottomLeftMetric == 1) {
 			fieldValue = mMovingSpeed;
-			fieldLabel = "Run. Pace";
+			fieldLabel = "Run";
 		} else if (uBottomLeftMetric == 2) {
 			fieldValue = mLapSpeed;
-			fieldLabel = "Lap Pace";
+			fieldLabel = "Lap";
 		} else if (uBottomLeftMetric == 3) {
 			fieldValue = mLapMovingSpeed;
-			fieldLabel = "Lap R Pace";
+			fieldLabel = "L R";
 		} else if (uBottomLeftMetric == 4) {
 			fieldValue = mLastLapSpeed;
-			fieldLabel = "L-1 Pace";
+			fieldLabel = "L-1";
 		} else if (uBottomLeftMetric == 5) {
 			fieldValue = mLastLapMovingSpeed;
-			fieldLabel = "L-1 R Pace";
+			fieldLabel = "-1R";
 		} else if (uBottomLeftMetric == 6) {
 			fieldValue = mLastNEconomySmooth.format("%d");
-			fieldLabel = "Economy";
+			fieldLabel = "Eco";
 			isPace = false;
 		} else if (uBottomLeftMetric == 7) {
 			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
-			fieldLabel = "Energy Exp.";
+			fieldLabel = "EE";
 			isPace = false;
 		}
 		if (isPace && fieldValue < 0.447164) {
@@ -546,33 +546,33 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		//! Bottom right
 		fieldValue 	= 0.0;
-		fieldLabel 	= "Avg. Pace";
+		fieldLabel 	= "Avg";
 		isPace 		= true;
 		if (uBottomRightMetric == 0 && info.averageSpeed != null) {
 			fieldValue = info.averageSpeed;
-			//fieldLabel = "Avg. Pace";
+			//fieldLabel = "Avg";
 		} else if (uBottomRightMetric == 1) {
 			fieldValue = mMovingSpeed;
-			fieldLabel = "Run. Pace";
+			fieldLabel = "Run";
 		} else if (uBottomRightMetric == 2) {
 			fieldValue = mLapSpeed;
-			fieldLabel = "Lap Pace";
+			fieldLabel = "Lap";
 		} else if (uBottomRightMetric == 3) {
 			fieldValue = mLapMovingSpeed;
-			fieldLabel = "Lap R Pace";
+			fieldLabel = "L R";
 		} else if (uBottomRightMetric == 4) {
 			fieldValue = mLastLapSpeed;
-			fieldLabel = "L-1 Pace";
+			fieldLabel = "L-1";
 		} else if (uBottomRightMetric == 5) {
 			fieldValue = mLastLapMovingSpeed;
-			fieldLabel = "L-1 R Pace";
+			fieldLabel = "-1R";
 		} else if (uBottomRightMetric == 6) {
 			fieldValue = mLastNEconomySmooth.format("%d");
-			fieldLabel = "Economy";
+			fieldLabel = "Eco";
 			isPace = false;
 		} else if (uBottomRightMetric == 7) {
 			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
-			fieldLabel = "Energy Exp.";
+			fieldLabel = "EE";
 			isPace = false;
 		}
 		if (isPace && fieldValue < 0.447164) {

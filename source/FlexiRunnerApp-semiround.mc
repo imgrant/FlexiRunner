@@ -530,7 +530,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			isPace = false;
 		} else if (uBottomLeftMetric == 7) {
 			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
-			fieldLabel = "Energy Exp.";
+			fieldLabel = "Energy Ex.";
 			isPace = false;
 		}
 		if (isPace && fieldValue < 0.447164) {
@@ -568,7 +568,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			isPace = false;
 		} else if (uBottomRightMetric == 7) {
 			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
-			fieldLabel = "Energy Exp.";
+			fieldLabel = "Energy Ex.";
 			isPace = false;
 		}
 		if (isPace && fieldValue < 0.447164) {
