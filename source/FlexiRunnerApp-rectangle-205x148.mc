@@ -42,13 +42,15 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 	hidden var uBottomLeftMetric  = 1;	//! Data to show in bottom left field
 	hidden var uBottomRightMetric = 0;	//! Data to show in bottom right field
-	//! Paces enum:
+	//! Lower fields enum:
 	//! 0 => (overall) average pace
 	//! 1 => Moving (running) pace
 	//! 2 => Lap pace
 	//! 3 => Lap moving (running) pace
 	//! 4 => Last lap pace
 	//! 5 => Last lap moving (running) pace
+	//! 6 => Recent economy
+	//! 7 => Energy expenditure
 
 	hidden var mTimerRunning = false;
 
@@ -309,47 +311,31 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     		mLapMovingSpeed = (mLapElapsedDistance - (mStoppedDistance - mLastLapStoppedDistMarker)) / (mLapTimerTime - mLapStoppedTime);
 		}
 
-    	//! Calculate HR zone
-    	var mHrZone = 0.0;
-    	var mCurrentHeartRate = "--";
-    	if (info.currentHeartRate != null) {
-    		mCurrentHeartRate = info.currentHeartRate;
-			if (uHrZones != null) {
-		    	if (info.currentHeartRate < uHrZones[0]) {
-					mHrZone = info.currentHeartRate / uHrZones[0].toFloat();
-				} else if (info.currentHeartRate < uHrZones[1]) {
-					mHrZone = 1 + (info.currentHeartRate - uHrZones[0]) / (uHrZones[1] - uHrZones[0]).toFloat();
-				} else if (info.currentHeartRate < uHrZones[2]) {
-					mHrZone = 2 + (info.currentHeartRate - uHrZones[1]) / (uHrZones[2] - uHrZones[1]).toFloat();
-				} else if (info.currentHeartRate < uHrZones[3]) {
-					mHrZone = 3 + (info.currentHeartRate - uHrZones[2]) / (uHrZones[3] - uHrZones[2]).toFloat();
-				} else if (info.currentHeartRate < uHrZones[4]) {
-					mHrZone = 4 + (info.currentHeartRate - uHrZones[3]) / (uHrZones[4] - uHrZones[3]).toFloat();
-				} else {
-					mHrZone = 5 + (info.currentHeartRate - uHrZones[4]) / (uHrZones[5] - uHrZones[4]).toFloat();
-				}
-			}
-    	}
-
      	//!
     	//! Draw colour indicators
 		//!
 
-		//! HR zone indicator
-		mColour = Graphics.COLOR_LT_GRAY;
-		if (mHrZone >= 5.0) {
-			mColour = Graphics.COLOR_RED;		//! Maximum
-		} else if (mHrZone >= 4.0) {
-			mColour = Graphics.COLOR_ORANGE;	//! Threshold
-		} else if (mHrZone >= 3.0) {
-			mColour = Graphics.COLOR_GREEN;		//! Aerobic
-		} else if (mHrZone >= 2.0) {
-			mColour = Graphics.COLOR_BLUE;		//! Easy
-		} //! Else Warm-up and no zone inherit default light grey here
+		//! HR zone
+    	mColour = Graphics.COLOR_LT_GRAY; //! No zone default light grey
+    	var mCurrentHeartRate = "--";
+    	if (info.currentHeartRate != null) {
+    		mCurrentHeartRate = info.currentHeartRate;
+			if (uHrZones != null) {
+				if (mCurrentHeartRate >= uHrZones[4]) {
+					mColour = Graphics.COLOR_RED;		//! Maximum (Z5)
+				} else if (mCurrentHeartRate >= uHrZones[3]) {
+					mColour = Graphics.COLOR_ORANGE;	//! Threshold (Z4)
+				} else if (mCurrentHeartRate >= uHrZones[2]) {
+					mColour = Graphics.COLOR_GREEN;		//! Aerobic (Z3)
+				} else if (mCurrentHeartRate >= uHrZones[1]) {
+					mColour = Graphics.COLOR_BLUE;		//! Easy (Z2)
+				} //! Else Warm-up (Z1) and no zone both inherit default light grey here
+			}
+    	}
 		dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
 		dc.fillRectangle(0, 53, 63, 17);		
 
-		//! Cadence zone indicator colour (fixed thresholds and colours to match Garmin, with the addition of grey for walking/stopped)
+		//! Cadence zone (fixed thresholds and colours to match Garmin Connect)
 		if (!uCentreRightMetric) {
 			mColour = Graphics.COLOR_LT_GRAY;
 			if (info.currentCadence != null) {
@@ -363,7 +349,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 					mColour = Graphics.COLOR_ORANGE;
 				} else if (info.currentCadence >= 120) {
 					mColour = Graphics.COLOR_RED;
-				}
+				} //! Else no cadence or walking/stopped inherits default light grey here
 			}
 			dc.setColor(mColour, Graphics.COLOR_TRANSPARENT);
 			dc.fillRectangle(142, 53, 63, 17);
@@ -423,11 +409,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		//! Set text colour
         dc.setColor(mBgColour, Graphics.COLOR_TRANSPARENT);
-
-		//! Labels
-		dc.drawText(31, 60, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		dc.drawText(102, 60, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-		dc.drawText(174, 60, Graphics.FONT_XTINY, (uCentreRightMetric) ? "Economy" : "Cadence", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
         //!
         //! Draw field values
@@ -509,74 +490,97 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			}
 			dc.drawText(102, 90, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fCurrentPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
+		dc.drawText(102, 60, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Centre left: heart rate
 		dc.drawText(31, 90, Graphics.FONT_NUMBER_MEDIUM, mCurrentHeartRate, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(31, 60, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Centre right: cadence or economy
 		var fCentre = mLastNEconomySmooth.format("%d");
+		var lCentre = "Economy";
 		if (!uCentreRightMetric) {
 			fCentre = (info.currentCadence != null) ? info.currentCadence : 0;
+			lCentre = "Cadence";
 		}
 		dc.drawText(174, 90, Graphics.FONT_NUMBER_MEDIUM, fCentre, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(174, 60, Graphics.FONT_XTINY, lCentre, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Bottom left
-		var fPace = 0.0;
-		var lPace = "Avg";
+		var fieldValue 	= 0.0;
+		var fieldLabel 	= "Avg. Pace";
+		var isPace 		= true;
 		if (uBottomLeftMetric == 0 && info.averageSpeed != null) {
-			fPace = info.averageSpeed;
-			//lPace = "Avg. Pace";
+			fieldValue = info.averageSpeed;
+			//fieldLabel = "Avg. Pace";
 		} else if (uBottomLeftMetric == 1) {
-			fPace = mMovingSpeed;
-			lPace = "Run";
+			fieldValue = mMovingSpeed;
+			fieldLabel = "Run. Pace";
 		} else if (uBottomLeftMetric == 2) {
-			fPace = mLapSpeed;
-			lPace = "Lap";
+			fieldValue = mLapSpeed;
+			fieldLabel = "Lap Pace";
 		} else if (uBottomLeftMetric == 3) {
-			fPace = mLapMovingSpeed;
-			lPace = "L R";
+			fieldValue = mLapMovingSpeed;
+			fieldLabel = "Lap R Pace";
 		} else if (uBottomLeftMetric == 4) {
-			fPace = mLastLapSpeed;
-			lPace = "L-1";
+			fieldValue = mLastLapSpeed;
+			fieldLabel = "L-1 Pace";
 		} else if (uBottomLeftMetric == 5) {
-			fPace = mLastLapMovingSpeed;
-			lPace = "-1R";
+			fieldValue = mLastLapMovingSpeed;
+			fieldLabel = "L-1 R Pace";
+		} else if (uBottomLeftMetric == 6) {
+			fieldValue = mLastNEconomySmooth.format("%d");
+			fieldLabel = "Economy";
+			isPace = false;
+		} else if (uBottomLeftMetric == 7) {
+			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
+			fieldLabel = "Energy Exp.";
+			isPace = false;
 		}
-		if (fPace < 0.447164) {
+		if (isPace && fieldValue < 0.447164) {
 			drawSpeedUnderlines(dc, 63, 128);
 		} else {
-			dc.drawText(63, 130, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(63, 130, Graphics.FONT_NUMBER_MEDIUM, (isPace) ? fmtPace(fieldValue) : fieldValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
-		dc.drawText(1, 118, Graphics.FONT_XTINY, lPace, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(1, 118, Graphics.FONT_XTINY, fieldLabel, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
 
 		//! Bottom right
-		fPace = 0.0;
-		lPace = "Avg";
+		fieldValue 	= 0.0;
+		fieldLabel 	= "Avg. Pace";
+		isPace 		= true;
 		if (uBottomRightMetric == 0 && info.averageSpeed != null) {
-			fPace = info.averageSpeed;
-			//lPace = "Avg. Pace";
+			fieldValue = info.averageSpeed;
+			//fieldLabel = "Avg. Pace";
 		} else if (uBottomRightMetric == 1) {
-			fPace = mMovingSpeed;
-			lPace = "Run";
+			fieldValue = mMovingSpeed;
+			fieldLabel = "Run. Pace";
 		} else if (uBottomRightMetric == 2) {
-			fPace = mLapSpeed;
-			lPace = "Lap";
+			fieldValue = mLapSpeed;
+			fieldLabel = "Lap Pace";
 		} else if (uBottomRightMetric == 3) {
-			fPace = mLapMovingSpeed;
-			lPace = "L R";
+			fieldValue = mLapMovingSpeed;
+			fieldLabel = "Lap R Pace";
 		} else if (uBottomRightMetric == 4) {
-			fPace = mLastLapSpeed;
-			lPace = "L-1";
+			fieldValue = mLastLapSpeed;
+			fieldLabel = "L-1 Pace";
 		} else if (uBottomRightMetric == 5) {
-			fPace = mLastLapMovingSpeed;
-			lPace = "-1R";
+			fieldValue = mLastLapMovingSpeed;
+			fieldLabel = "L-1 R Pace";
+		} else if (uBottomRightMetric == 6) {
+			fieldValue = mLastNEconomySmooth.format("%d");
+			fieldLabel = "Economy";
+			isPace = false;
+		} else if (uBottomRightMetric == 7) {
+			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
+			fieldLabel = "Energy Exp.";
+			isPace = false;
 		}
-		if (fPace < 0.447164) {
+		if (isPace && fieldValue < 0.447164) {
 			drawSpeedUnderlines(dc, 142, 128);
 		} else {
-			dc.drawText(142, 130, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(142, 130, Graphics.FONT_NUMBER_MEDIUM, (isPace) ? fmtPace(fieldValue) : fieldValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
-		dc.drawText(203, 118, Graphics.FONT_XTINY, lPace, Graphics.TEXT_JUSTIFY_RIGHT|Graphics.TEXT_JUSTIFY_VCENTER);
+		dc.drawText(203, 118, Graphics.FONT_XTINY, fieldLabel, Graphics.TEXT_JUSTIFY_RIGHT|Graphics.TEXT_JUSTIFY_VCENTER);
 
     }
 

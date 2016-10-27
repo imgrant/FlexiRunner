@@ -57,7 +57,7 @@
     <!-- Beta name:
     <string id="AppName">Flexirunner Beta</string>
     -->
-    <string id="AppVersion">5.1.1</string>
+    <string id="AppVersion">5.2.0</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerMoving">Moving time</string>
@@ -79,6 +79,8 @@
     <string id="lLapRunPace">Current lap moving (running) pace</string>
     <string id="lLastLapPace">Last lap pace</string>
     <string id="lLastLapRunPace">Last lap moving (running) pace</string>
+    <string id="lEconomy">Recent economy</string>
+    <string id="lEE">Energy expenditure</string>
     <string id="lEconomyChart">Running Economy</string>
     <string id="lEconomyData">Economy</string>
     <string id="lEconomyAvgData">Avg Economy</string>
@@ -126,6 +128,8 @@
         <listEntry value="3">@Strings.lLapRunPace</listEntry>
         <listEntry value="4">@Strings.lLastLapPace</listEntry>
         <listEntry value="5">@Strings.lLastLapRunPace</listEntry>
+        <listEntry value="6">@Strings.lEconomy</listEntry>
+        <listEntry value="7">@Strings.lEE</listEntry>
       </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pBottomRightMetric" title="@Strings.lBottomRightMetric">
@@ -136,6 +140,8 @@
         <listEntry value="3">@Strings.lLapRunPace</listEntry>
         <listEntry value="4">@Strings.lLastLapPace</listEntry>
         <listEntry value="5">@Strings.lLastLapRunPace</listEntry>
+        <listEntry value="6">@Strings.lEconomy</listEntry>
+        <listEntry value="7">@Strings.lEE</listEntry>
       </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pCentreRightMetric" title="@Strings.lCentreRightMetric">
