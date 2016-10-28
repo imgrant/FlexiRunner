@@ -16,8 +16,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var uHrZones;
 	hidden var unitP = 1000.0;
 	hidden var unitD = 1000.0;
-	
-	hidden var mBgColour;
 
 	hidden var uTimerDisplay = 0;
 	//! 0 => Timer
@@ -86,8 +84,6 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     function initialize() {
         DataField.initialize();
-        
-        mBgColour = (getBackgroundColor() == Graphics.COLOR_BLACK) ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
 
         var mProfile 		= UserProfile.getProfile();
  		uHrZones 			= UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
@@ -270,6 +266,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     function onUpdate(dc) {
     	var info = Activity.getActivityInfo();
 
+		var mBgColour = (getBackgroundColor() == Graphics.COLOR_BLACK) ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
     	var mColour;
 
     	//! Calculate lap distance
