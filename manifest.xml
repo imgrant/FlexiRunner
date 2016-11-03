@@ -17,6 +17,8 @@
             <iq:product id="fenix3"/>
             <iq:product id="fenix3_hr"/>
             <iq:product id="fenixchronos"/>
+            <iq:product id="d2bravo"/>
+            <iq:product id="d2bravo_titanium"/>
             <iq:product id="fr920xt"/>
             <iq:product id="vivoactive_hr"/>
         </iq:products>
