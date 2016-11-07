@@ -13,7 +13,7 @@ class FlexiRunnerApp extends Toybox.Application.AppBase {
 
 class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
-	hidden var uHrZones;
+	hidden var uHrZones = [ 93, 111, 130, 148, 167, 185 ];
 	hidden var unitP = 1000.0;
 	hidden var unitD = 1000.0;
 
@@ -85,9 +85,13 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     function initialize() {
         DataField.initialize();
 
-        var mProfile 		= UserProfile.getProfile();
- 		uHrZones 			= UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
- 		uRestingHeartRate 	= mProfile.restingHeartRate;
+        var mProfile = UserProfile.getProfile();
+        if (mProfile != null) {
+	 		uHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
+	 		if (mProfile has :restingHeartRate && mProfile.restingHeartRate != null) {
+	 			uRestingHeartRate = mProfile.restingHeartRate;
+	 		}
+ 		}
 
  		var mApp = Application.getApp();
  		uTimerDisplay			= mApp.getProperty("pTimerDisplay");
@@ -154,7 +158,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	        } else {
 	        	mLastNAvgHeartRate = (0.064516 * mCurrentHeartRate) + (0.935484 * mLastNAvgHeartRate);
 	        }
-			if (mLastNElapsedDistance > 0) {
+			if (mLastNElapsedDistance > 0 && mLastNAvgHeartRate > uRestingHeartRate) {
 				var t = (mTicker < 30) ? mTicker / 60.0 : 0.5;
 				mLastNEconomy = ( 1 / ( ((mLastNAvgHeartRate - uRestingHeartRate) * t) / (mLastNElapsedDistance / 1609.344) ) ) * 100000;
 			}
