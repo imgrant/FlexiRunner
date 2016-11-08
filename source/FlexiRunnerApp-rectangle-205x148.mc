@@ -312,6 +312,9 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     		mLapMovingSpeed = (mLapElapsedDistance - (mStoppedDistance - mLastLapStoppedDistMarker)) / (mLapTimerTime - mLapStoppedTime);
 		}
 
+		var mEnergyExpenditure = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
+		var mCalories = (info.calories != null) ? info.calories : 0;
+
      	//!
     	//! Draw colour indicators
 		//!
@@ -534,8 +537,12 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			fieldLabel = "Eco";
 			isPace = false;
 		} else if (uBottomLeftMetric == 7) {
-			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
+			fieldValue = mEnergyExpenditure;
 			fieldLabel = "EE";
+			isPace = false;
+		} else if (uBottomLeftMetric == 8) {
+			fieldValue = mCalories;
+			fieldLabel = "Cal";
 			isPace = false;
 		}
 		if (isPace && fieldValue < 0.447164) {
@@ -572,8 +579,12 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 			fieldLabel = "Eco";
 			isPace = false;
 		} else if (uBottomRightMetric == 7) {
-			fieldValue = (info.energyExpenditure != null) ? (info.energyExpenditure * 60).toNumber() : 0;
+			fieldValue = mEnergyExpenditure;
 			fieldLabel = "EE";
+			isPace = false;
+		} else if (uBottomRightMetric == 8) {
+			fieldValue = mCalories;
+			fieldLabel = "Cal";
 			isPace = false;
 		}
 		if (isPace && fieldValue < 0.447164) {
