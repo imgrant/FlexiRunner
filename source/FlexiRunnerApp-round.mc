@@ -56,6 +56,10 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 	hidden var mStoppedTime 		= 0;
 	hidden var mStoppedDistance 	= 0;
 	hidden var mPrevElapsedDistance = 0;
+	
+	hidden const BUFFER_SIZE = 5;
+	hidden var mSpeedQueue          = null;
+	hidden var mCurrentSpeed        = 0;
 
 	hidden var uTargetPaceMetric = 0;	//! Which average pace metric should be used as the reference for deviation of the current pace? (see above)
 
@@ -103,6 +107,10 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
  		uBottomRightMetric		= mApp.getProperty("pBottomRightMetric");
  		uRoundedPace			= mApp.getProperty("pRoundedPace");
 
+		if (uRoundedPace) {
+			mSpeedQueue = new[BUFFER_SIZE];
+		} 
+		
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
         	unitP = 1609.344;
         }
@@ -147,6 +155,21 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 				//! Simple non-moving time calculation - relies on compute() being called every second
 				mStoppedTime++;
 				mStoppedDistance += mDistanceIncrement;
+			} else {
+				if (uRoundedPace && info.currentSpeed != null) {
+					mSpeedQueue[(mTicker-1)%BUFFER_SIZE]=info.currentSpeed;
+				    var avg=0;
+				    var num=0;
+					for (var i=0; i<BUFFER_SIZE;i++) {
+			    		if (mSpeedQueue[i]!=null) {
+			    			avg += mSpeedQueue[i];
+			    			num++; 
+			    		}
+			    	}
+					mCurrentSpeed = avg/ num;
+				} else {
+					mCurrentSpeed = info.currentSpeed;
+				}
 			}			
 
 			//! Running economy: http://fellrnr.com/wiki/Running_Economy
@@ -263,15 +286,18 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		
 		mTicker 	= 0;
 		mLapTicker	= 0;
+		if (uRoundedPace) {
+			mSpeedQueue = new[BUFFER_SIZE];
+		}
+		mCurrentSpeed = null; 
     }
-    
-    
+
+
     //! Do necessary calculations and draw fields.
     //! This will be called once a second when the data field is visible.
     function onUpdate(dc) {
     	var info = Activity.getActivityInfo();
 
-		var mBgColour = (getBackgroundColor() == Graphics.COLOR_BLACK) ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
     	var mColour;
 
     	//! Calculate lap distance
@@ -362,7 +388,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
 		//! Current pace vs target pace colour indicator
 		mColour = Graphics.COLOR_LT_GRAY;
-		if (info.currentSpeed != null && info.currentSpeed > 1.8) {	//! Only use the pace colour indicator when running (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
+		if (mCurrentSpeed != null && mCurrentSpeed > 1.8) {	//! Only use the pace colour indicator when running (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
 			var mTargetSpeed = 0.0;
 			if (uTargetPaceMetric == 0 && info.averageSpeed != null) {
 				mTargetSpeed = info.averageSpeed;
@@ -378,7 +404,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 				mTargetSpeed = mLastLapMovingSpeed;
 			}
 			if (mTargetSpeed > 0) {
-				var paceDeviation = (info.currentSpeed / mTargetSpeed);
+				var paceDeviation = (mCurrentSpeed / mTargetSpeed);
 				if (paceDeviation < 0.95) {	//! More than 5% slower
 					mColour = Graphics.COLOR_RED;
 				} else if (paceDeviation <= 1.05) {	//! Within +/-5% of target pace
@@ -413,7 +439,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawRoundedRectangle(92, -8, 32, 36, 4);
 
 		//! Set text colour
-        dc.setColor(mBgColour, Graphics.COLOR_TRANSPARENT);
+		//! var mBgColour = (getBackgroundColor() == Graphics.COLOR_BLACK) ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
 
         //!
         //! Draw field values
@@ -486,14 +513,10 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 		dc.drawText(154, 27, Graphics.FONT_XTINY,  lDistance, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		
 		//! Centre middle: current pace
-		if (info.currentSpeed == null || info.currentSpeed < 0.447164) {
+		if (mCurrentSpeed == null || mCurrentSpeed < 0.447164) {
 			drawSpeedUnderlines(dc, 107, 119);
 		} else {
-			var fCurrentPace = info.currentSpeed;		
-			if (uRoundedPace) {
-				fCurrentPace = unitP/(Math.round( (unitP/info.currentSpeed) / 5 ) * 5);
-			}
-			dc.drawText(107, 116, Graphics.FONT_NUMBER_MEDIUM, fmtPace(fCurrentPace), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+			dc.drawText(107, 116, Graphics.FONT_NUMBER_MEDIUM, fmtPace(mCurrentSpeed), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 		}
 		dc.drawText(107, 87, Graphics.FONT_XTINY,  "Pace", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 
