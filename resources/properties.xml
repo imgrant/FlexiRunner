@@ -2,11 +2,10 @@
 
   <properties>
     <property id="pTimerDisplay" type="number">0</property>
-    <property id="pDistDisplay" type="number">0</property>  	
-  	<property id="pTargetPace" type="number">0</property>    
+    <property id="pDistDisplay" type="number">0</property>
+  	<property id="pTargetPace" type="number">0</property>
     <property id="pBottomLeftMetric" type="number">1</property>
     <property id="pBottomRightMetric" type="number">0</property>
-    <property id="pCentreRightMetric" type="boolean">false</property>
     <property id="pRoundedPace" type="boolean">true</property>
 	</properties>
 
@@ -38,16 +37,6 @@
       precision="0"
       dataLabel="@Strings.lEconomyAvgData"
       unitLabel="@Strings.lEconomyUnits" />
-    <fitField id="3"
-      displayInChart="true"
-      displayInActivityLaps="false"
-      displayInActivitySummary="false"
-      sortOrder="0"
-      precision="0"
-      chartTitle="@Strings.lEEChart"
-      dataLabel="@Strings.lEEData"
-      unitLabel="@Strings.lEEUnits"
-      fillColor="#c4540f" />
   </fitContributions>
 
 
@@ -57,7 +46,7 @@
     <!-- Beta name:
     <string id="AppName">Flexirunner Beta</string>
     -->
-    <string id="AppVersion">5.3.0</string>
+    <string id="AppVersion">6.0.0</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerMoving">Moving time</string>
@@ -70,7 +59,6 @@
     <string id="lDistLap">Current lap distance</string>
     <string id="lDistLastLap">Last lap distance</string>
     <string id="lTargetPace">Target pace metric</string>
-    <string id="lCentreRightMetric">Show economy instead of cadence</string>
     <string id="lBottomLeftMetric">Bottom left field</string>
     <string id="lBottomRightMetric">Bottom right field</string>
     <string id="lAvgPace">Overall average pace</string>
@@ -85,10 +73,7 @@
     <string id="lEconomyChart">Running Economy</string>
     <string id="lEconomyData">Economy</string>
     <string id="lEconomyAvgData">Avg Economy</string>
-    <string id="lEconomyUnits"> </string>
-    <string id="lEEChart">Energy Expenditure</string>
-    <string id="lEEData">Energy Expenditure</string>
-    <string id="lEEUnits">kcal/h</string>
+    <string id="lEconomyUnits">cal kg⁻¹ km⁻¹</string>
     <string id="lRoundedPace">Show current pace as Rounded Pace</string>
   </strings>
 
@@ -110,7 +95,7 @@
         <listEntry value="2">@Strings.lDistLap</listEntry>
         <listEntry value="3">@Strings.lDistLastLap</listEntry>
       </settingConfig>
-    </setting>  	
+    </setting>
   	<setting propertyKey="@Properties.pTargetPace" title="@Strings.lTargetPace">
   		<settingConfig type="list" required="true">
   			<listEntry value="0">@Strings.lAvgPace</listEntry>
@@ -147,12 +132,9 @@
         <listEntry value="8">@Strings.lCalories</listEntry>
       </settingConfig>
     </setting>
-    <setting propertyKey="@Properties.pCentreRightMetric" title="@Strings.lCentreRightMetric">
-      <settingConfig type="boolean" required="true" />
-    </setting>
     <setting propertyKey="@Properties.pRoundedPace" title="@Strings.lRoundedPace">
       <settingConfig type="boolean" required="true" />
-    </setting>   
+    </setting>
   </settings>
 
   <bitmap id="LauncherIcon" filename="launcher_icon.png"></bitmap>
