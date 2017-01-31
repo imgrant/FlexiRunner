@@ -14,7 +14,7 @@ class FlexiRunnerApp extends Toybox.Application.AppBase {
 class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     hidden var uHrZones                     = [ 93, 111, 130, 148, 167, 185 ];
-    hidden var uWeight                      = null;
+    hidden var uWeight                      = 0;
     hidden var unitP                        = 1000.0;
     hidden var unitD                        = 1000.0;
 
@@ -115,20 +115,20 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
             var mDistanceIncrement  = mElapsedDistance - mPrevElapsedDistance;
             var mLapElapsedDistance = mElapsedDistance - mLastLapDistMarker;
 
-            if (info.currentSpeed != null && info.currentSpeed < 1.8) { //! Speed below which the moving time timer is paused (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
+            if (info.currentSpeed != null && info.currentSpeed < 2.0) { //! Speed below which the moving time timer is paused (2.0 m/s = 8:20 min/km, 13:25 min/mi)
                 //! Simple non-moving time calculation - relies on compute() being called every second
                 mStoppedTime++;
                 mStoppedDistance += mDistanceIncrement;
             }
 
             var mAverageEconomy = 0;
-            if (info has :calories && info.calories != null && info.calories > 0 && mElapsedDistance > 0 && uWeight != null) {
+            if (info has :calories && info.calories != null && info.calories > 0 && mElapsedDistance > 0 && uWeight > 0) {
                 mAverageEconomy = ( (info.calories * 1000.0) / uWeight) / (mElapsedDistance / 1000.0);   //! cal kg-1 km-1 - Note, cal not kcal!
             }
             mAverageEconomyField.setData(mAverageEconomy.toNumber());
 
             var mLapEconomy = 0;
-            if (info has :calories && info.calories != null && info.calories > mLastLapCalories && mLapElapsedDistance > 0 && uWeight != null) {
+            if (info has :calories && info.calories != null && info.calories > mLastLapCalories && mLapElapsedDistance > 0 && uWeight > 0) {
                 mLapEconomy = ( ( (info.calories - mLastLapCalories) * 1000.0 ) / uWeight ) / (mLapElapsedDistance / 1000.0);    //! cal kg-1 km-1 - Note, cal not kcal!
             }
             mLapEconomyField.setData(mLapEconomy.toNumber());
@@ -136,17 +136,33 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
             mPrevElapsedDistance = mElapsedDistance;
         }
 
-        if (info has :energyExpenditure) {
-            if (info.energyExpenditure != null && info.currentSpeed != null && info.currentSpeed > 0 && uWeight != null) {
-                    var mEconomy = ( ( info.energyExpenditure  / uWeight ) / info.currentSpeed ) * 16666.666; //! cal kg-1 km-1 - Note, cal not kcal!
-                        if (mEconomySmooth == 0) {
-                            mEconomySmooth = mEconomy;    //! Initialize by setting to instantaneous value
-                        } else {
-                            mEconomySmooth = (0.181818 * mEconomy) + (0.818181 * mEconomySmooth);    //! Smoothing roughly equivalent to 10s average
-                        }
-                    mEconomyField.setData(mEconomy.toNumber());    //! Store unsmoothed value (TBC whether to store smoothed instead)
+        var mEconomy = 0;
+        if (info has :energyExpenditure && uWeight > 0) {
+            if (info.energyExpenditure == null || info.energyExpenditure == 0) {
+                //! If there's no EE data, set economy to zero
+                mEconomy = 0;
+                mEconomySmooth = 0;
+            } else if (info.currentSpeed != null && info.currentSpeed > 0.8 && info.currentSpeed < 18) {
+                //! Calculate economy so long as the speed seems normal
+                mEconomy = ( ( info.energyExpenditure  / uWeight ) / info.currentSpeed ) * 16666.666; //! cal kg-1 km-1 - Note, cal not kcal!
+            } else {
+                //! Otherwise, propagate the existing economy value (to avoid erroneous spikes)
+                mEconomy = mEconomySmooth;
             }
         }
+
+        if (mEconomySmooth == 0) {
+            //! If we have a raw instantaneous economy but the smoothed value is zero, initialize the rolling average by setting it to the instantaneous value
+            mEconomySmooth = mEconomy;
+        } else {
+            //! Smoothing roughly equivalent to 5s average
+            mEconomySmooth = (0.333333 * mEconomy) + (0.666666 * mEconomySmooth);
+        }
+        //! Cap the economy at four figures
+        if (mEconomySmooth > 9999) {
+            mEconomySmooth = 9999;
+        }
+        mEconomyField.setData(mEconomySmooth.toNumber());    //! Store smoothed value
 
     }
 
@@ -313,7 +329,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
         //! Current pace vs target pace colour indicator
         mColour = Graphics.COLOR_LT_GRAY;
-        if (info.currentSpeed != null && info.currentSpeed > 1.8) {    //! Only use the pace colour indicator when running (1.8 m/s = 9:15 min/km, ~15:00 min/mi)
+        if (info.currentSpeed != null && info.currentSpeed > 2.0) {    //! Only use the pace colour indicator when running (2.0 m/s = 8:20 min/km, 13:25 min/mi)
             var mTargetSpeed = 0.0;
             if (uTargetPaceMetric == 0 && info.averageSpeed != null) {
                 mTargetSpeed = info.averageSpeed;
