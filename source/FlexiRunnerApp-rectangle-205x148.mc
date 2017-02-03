@@ -35,6 +35,10 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     //! true     => Show current pace as Rounded Pace (i.e. rounded to 5 second intervals)
     //! false    => Show current pace without rounding (i.e. 1-second resolution)
 
+    hidden var uBacklight                   = false;
+    //! true     => Force the backlight to stay on permanently
+    //! false    => Use the defined backlight timeout as normal
+
     hidden var uBottomLeftMetric            = 1;    //! Data to show in bottom left field
     hidden var uBottomRightMetric           = 0;    //! Data to show in bottom right field
     //! Lower fields enum:
@@ -48,6 +52,7 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     //! 7 => Energy expenditure
 
     hidden var mTimerRunning                = false;
+    hidden var mStartStopPushed             = 0;    //! Timer value when the start/stop button was last pushed
 
     hidden var mStoppedTime                 = 0;
     hidden var mStoppedDistance             = 0;
@@ -134,6 +139,11 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
             mLapEconomyField.setData(mLapEconomy.toNumber());
 
             mPrevElapsedDistance = mElapsedDistance;
+
+            //! If enabled, switch the backlight on in order to make it stay on
+            if (uBacklight) {
+                Attention.backlight(true);
+            }
         }
 
         var mEconomy = 0;
@@ -192,12 +202,24 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     //! Timer transitions from stopped to running state
     function onTimerStart() {
+        var info = Activity.getActivityInfo();
+        //! If the start/stop button was last pushed less than 1.5 seconds ago,
+        //! toggle the force backlight feature (see in compute(), above).
+        //! That is, press the start/stop button twice in quick succession
+        //! to make the backlight stay on, or revert to the normal timeout
+        //! setting as configured on the watch.
+        if (  ( info.elapsedTime > 0 )  &&  ( (info.elapsedTime - mStartStopPushed) < 1500 )  ) {
+            uBacklight = !uBacklight;
+        }
+        mStartStopPushed = info.elapsedTime;
         mTimerRunning = true;
     }
 
 
     //! Timer transitions from running to stopped state
     function onTimerStop() {
+        var info = Activity.getActivityInfo();
+        mStartStopPushed = info.elapsedTime;
         mTimerRunning = false;
     }
 
@@ -232,6 +254,8 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
         mLastLapCalories            = 0;
 
         mEconomySmooth              = 0;
+
+        mStartStopPushed            = 0;
     }
 
 
