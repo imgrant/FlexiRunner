@@ -202,24 +202,14 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
 
     //! Timer transitions from stopped to running state
     function onTimerStart() {
-        var info = Activity.getActivityInfo();
-        //! If the start/stop button was last pushed less than 1.5 seconds ago,
-        //! toggle the force backlight feature (see in compute(), above).
-        //! That is, press the start/stop button twice in quick succession
-        //! to make the backlight stay on, or revert to the normal timeout
-        //! setting as configured on the watch.
-        if (  ( info.elapsedTime > 0 )  &&  ( (info.elapsedTime - mStartStopPushed) < 1500 )  ) {
-            uBacklight = !uBacklight;
-        }
-        mStartStopPushed = info.elapsedTime;
+        startStopPushed();
         mTimerRunning = true;
     }
 
 
     //! Timer transitions from running to stopped state
     function onTimerStop() {
-        var info = Activity.getActivityInfo();
-        mStartStopPushed = info.elapsedTime;
+        startStopPushed();
         mTimerRunning = false;
     }
 
@@ -234,6 +224,22 @@ class FlexiRunnerView extends Toybox.WatchUi.DataField {
     function onTimerPause() {
         mTimerRunning = false;
     }
+
+
+    //! Start/stop button was pushed - emulated via timer start/stop
+    //! If the button was double pressed quickly, toggle
+    //! the force backlight feature (see in compute(), above).
+    function startStopPushed() {
+        var info = Activity.getActivityInfo();
+        var doublePressTimeMs = null;
+        if ( mStartStopPushed > 0  &&  info.elapsedTime > 0 ) {
+            doublePressTimeMs = info.elapsedTime - mStartStopPushed;
+        }
+        if ( doublePressTimeMs != null  &&  doublePressTimeMs < 1000 ) {
+            uBacklight = !uBacklight;
+        }
+        mStartStopPushed = info.elapsedTime;
+      }
 
 
     //! Current activity is ended
